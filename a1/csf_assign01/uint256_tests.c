@@ -56,9 +56,9 @@ int main(int argc, char **argv) {
 
   TEST_INIT();
 
-  TEST(test_get_bits);
-  TEST(test_create_from_u32);
-  TEST(test_create);
+  TEST(test_get_bits); // DONE
+  TEST(test_create_from_u32); //DONE
+  TEST(test_create); //DONE
   TEST(test_create_from_hex);
   TEST(test_format_as_hex);
   TEST(test_add);

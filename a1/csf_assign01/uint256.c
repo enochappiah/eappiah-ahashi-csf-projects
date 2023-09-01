@@ -9,7 +9,11 @@
 // all other bits are set to 0.
 UInt256 uint256_create_from_u32(uint32_t val) {
   UInt256 result;
-  // TODO: implement
+  // COMPLETE
+  result.data[0] = val;
+  for (int i = 1; i < 8; i++) {
+    result.data[i] = 0;
+  }
   return result;
 }
 
@@ -18,7 +22,10 @@ UInt256 uint256_create_from_u32(uint32_t val) {
 // at index 3 is the most significant.
 UInt256 uint256_create(const uint32_t data[8]) {
   UInt256 result;
-  // TODO: implement
+  // COMPLETE
+  for(int i = 0; i <= 8; i++) {
+    result.data[i] = data[i];
+  }
   return result;
 }
 
@@ -42,8 +49,8 @@ char *uint256_format_as_hex(UInt256 val) {
 // significant 32 bits.
 uint32_t uint256_get_bits(UInt256 val, unsigned index) {
   uint32_t bits;
-  // TODO: implement
-  return bits;
+  // COMPLETE
+  return val.data[index];
 }
 
 // Compute the sum of two UInt256 values.
