@@ -103,7 +103,7 @@ void cleanup(TestObjs *objs) {
   free(objs);
 }
 
-void test_get_bits(TestObjs *objs) {
+void test_get_bits(TestObjs *objs) { 
   ASSERT(0U == uint256_get_bits(objs->zero, 0));
   ASSERT(0U == uint256_get_bits(objs->zero, 1));
   ASSERT(0U == uint256_get_bits(objs->zero, 2));
@@ -155,7 +155,7 @@ void test_create(TestObjs *objs) {
   ASSERT(8U == val1.data[7]);
 }
 
-void test_create_from_hex(TestObjs *objs) {
+void test_create_from_hex(TestObjs *objs) { //TODO
   UInt256 zero = uint256_create_from_hex("0");
   ASSERT_SAME(objs->zero, zero);
 
@@ -166,7 +166,7 @@ void test_create_from_hex(TestObjs *objs) {
   ASSERT_SAME(objs->max, max);
 }
 
-void test_format_as_hex(TestObjs *objs) {
+void test_format_as_hex(TestObjs *objs) { //TODO
   char *s;
 
   s = uint256_format_as_hex(objs->zero);
@@ -182,7 +182,7 @@ void test_format_as_hex(TestObjs *objs) {
   free(s);
 }
 
-void test_add(TestObjs *objs) {
+void test_add(TestObjs *objs) { //TODO
   UInt256 result;
 
   result = uint256_add(objs->zero, objs->zero);
@@ -201,7 +201,9 @@ void test_add(TestObjs *objs) {
   ASSERT_SAME(objs->zero, result);
 }
 
-void test_sub(TestObjs *objs) {
+
+
+void test_sub(TestObjs *objs) { //TODO
   UInt256 result;
 
   result = uint256_sub(objs->zero, objs->zero);
@@ -214,7 +216,7 @@ void test_sub(TestObjs *objs) {
   ASSERT_SAME(objs->max, result);
 }
 
-void test_negate(TestObjs *objs) {
+void test_negate(TestObjs *objs) { //TODO
   UInt256 result;
 
   result = uint256_negate(objs->zero);
@@ -227,7 +229,7 @@ void test_negate(TestObjs *objs) {
   ASSERT_SAME(objs->one, result);
 }
 
-void test_rotate_left(TestObjs *objs) {
+void test_rotate_left(TestObjs *objs) { //TODO
   UInt256 result;
 
   // rotating the value with just the most significant bit set
@@ -249,7 +251,7 @@ void test_rotate_left(TestObjs *objs) {
   ASSERT(0xD0000000U == result.data[7]);
 }
 
-void test_rotate_right(TestObjs *objs) {
+void test_rotate_right(TestObjs *objs) { //TODO
   UInt256 result;
 
   // rotating 1 right by 1 position should result in a value with just

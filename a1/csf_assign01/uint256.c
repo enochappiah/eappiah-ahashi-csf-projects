@@ -71,6 +71,20 @@ UInt256 uint256_sub(UInt256 left, UInt256 right) {
 UInt256 uint256_negate(UInt256 val) {
   UInt256 result;
   // TODO: implement
+  // for (int i = 0; i < 8; i++) {
+  //   val.data[i] == 0U ? val.data[i] = 1U : val.data[i] = 0U;
+  // }
+  uint32_t data1[8] = { 1U, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
+  UInt256 val1 = uint256_create(data1);
+
+  for (int i = 0; i < 8; i++) {
+    if (val.data[i] == 0U) {
+      val.data[i] = 1U;
+    } else {
+      val.data[i] = 0U;
+    }
+  }
+  result = uint256_add(val, val1);
   return result;
 }
 
