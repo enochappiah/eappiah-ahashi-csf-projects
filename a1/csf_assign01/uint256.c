@@ -6,6 +6,8 @@
 #include <sys/types.h>
 #include "uint256.h"
 
+#define BASE16 16
+
 // Create a UInt256 value from a single uint32_t value.
 // Only the least-significant 32 bits are initialized directly,
 // all other bits are set to 0.
@@ -35,6 +37,8 @@ UInt256 uint256_create(const uint32_t data[8]) {
 UInt256 uint256_create_from_hex(const char *hex) {
   UInt256 result;
   // TODO: implement
+  char *endHexString; 
+  unsigned long hexLong = strtoull(hex, &endHexString, BASE16);
   return result;
 }
 
