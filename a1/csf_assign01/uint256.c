@@ -1,7 +1,9 @@
 #include <assert.h>
+#include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/types.h>
 #include "uint256.h"
 
 // Create a UInt256 value from a single uint32_t value.
@@ -56,7 +58,14 @@ uint32_t uint256_get_bits(UInt256 val, unsigned index) {
 // Compute the sum of two UInt256 values.
 UInt256 uint256_add(UInt256 left, UInt256 right) {
   UInt256 sum;
-  // TODO: implement
+  uint32_t carryValue = 0;
+
+  for (int i = 0; i < 8; i++) {
+    uint64_t indSum = (uint64_t)right.data[i] + left.data[i] + carryValue;
+    
+    carryValue = (uint32_t)(indSum >> 32);
+    sum.data[i] = (uint32_t)indSum;
+  }
   return sum;
 }
 
