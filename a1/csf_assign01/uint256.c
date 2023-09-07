@@ -72,10 +72,8 @@ UInt256 uint256_add(UInt256 left, UInt256 right) {
 // Compute the difference of two UInt256 values.
 UInt256 uint256_sub(UInt256 left, UInt256 right) {
   UInt256 result;
-  
-  result = uint256_add(left, uint256_negate(right));
 
-  return result;
+  return result = uint256_add(left, uint256_negate(right));
 }
 
 // Return the two's-complement negation of the given UInt256 value.
