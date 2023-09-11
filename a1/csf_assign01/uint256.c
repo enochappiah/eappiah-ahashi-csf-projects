@@ -37,8 +37,16 @@ UInt256 uint256_create(const uint32_t data[8]) {
 UInt256 uint256_create_from_hex(const char *hex) {
   UInt256 result;
   // TODO: implement
-  char *endHexString; 
-  unsigned long hexLong = strtoull(hex, &endHexString, BASE16);
+  // char *endHexString; 
+  // unsigned long hexLong = strtoul(hex, &endHexString, BASE16);
+  unsigned long arr[8];
+  char * end;
+  
+  for (int i = 0; i < 64; i += 8) {
+    unsigned long val = strtol(hex,&end, BASE16);
+    result.data[i/8] = val;
+  }
+
   return result;
 }
 
