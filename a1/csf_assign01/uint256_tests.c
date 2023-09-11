@@ -275,11 +275,13 @@ void test_rotate_right(TestObjs *objs) { //TODO
 void testZeroAddition(TestObjs *objs) {
   UInt256 result;
 
+  result = uint256_add(objs->one, objs->zero);
+  ASSERT_SAME(objs->one, result);
+  result = uint256_add(objs->one, objs->zero);
+  ASSERT_SAME(objs->one, result); //testing 1 + 0 + 0 = 1
+
   result = uint256_add(objs->max, objs->zero);
   ASSERT_SAME(objs->max, result);
-
-  result = uint256_add(objs->zero, objs->zero);
-  ASSERT_SAME(objs->one, result);
 
   uint32_t two_data[8] = { 2U };
   UInt256 two;
