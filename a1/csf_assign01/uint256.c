@@ -36,14 +36,18 @@ UInt256 uint256_create(const uint32_t data[8]) {
 // Create a UInt256 value from a string of hexadecimal digits.
 UInt256 uint256_create_from_hex(const char *hex) {
   UInt256 result;
+  for (int i = 0; i < 8; i++) {
+    result.data[i] = 0x0u;
+  }
+
   // TODO: implement
-  char *endHexString; 
-  unsigned long hexLong = strtoul(hex, &endHexString, BASE16);
-  unsigned long arr[8];
-  char * buffer;
+  char buffer[9];
+  printf("\n %lu \n", sizeof(hex));
   
   for (int i = 0; i < strlen(hex); i++) {
-    memcpy(buffer, hex, 8);
+    memcpy(buffer, &hex[i], sizeof(buffer));
+    buffer[8] = '\0';
+    //strncpy(buffer, hex, sizeof(buffer));
     result.data[i] = strtol(buffer,NULL, BASE16);
   }
   // unsigned long val = strtol(hex,NULL, BASE16);
