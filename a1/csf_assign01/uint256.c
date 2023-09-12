@@ -35,27 +35,30 @@ UInt256 uint256_create(const uint32_t data[8]) {
 
 // Create a UInt256 value from a string of hexadecimal digits.
 UInt256 uint256_create_from_hex(const char *hex) {
-  UInt256 result;
-  for (int i = 0; i < 8; i++) {
-    result.data[i] = 0x0u;
+  //Set all data fields to 0
+  UInt256 result = uint256_create_from_u32(0);
+  int index = 0;
+  int substringLength = 8;
+  int prev = strlen(hex);
+  int start = strlen(hex) - substringLength;
+  while(index < 8) {  
+    char substring[9];
+    if(start < 0) {
+       // Fill bucket with left over segment with less than 16 chars
+        char leftOver[prev + 1];
+        strncpy(leftOver, hex, prev);
+        leftOver[prev] = '\0';
+        result.data[index] = strtoul(leftOver, NULL, 16);
+        break;
+    }
+    //Create substring of 16 length segments from right to left
+    strncpy(substring, hex + start, substringLength);
+    substring[substringLength] = '\0';
+    result.data[index] = strtoul(substring, NULL, 16);
+    prev = start;
+    start = strlen(hex) - substringLength * (index + 2);
+    index++;
   }
-
-  // TODO: implement
-  char buffer[9];
-  printf("\n %lu \n", sizeof(hex));
-  
-  for (int i = 0; i < strlen(hex); i++) {
-    memcpy(buffer, &hex[i], sizeof(buffer));
-    buffer[8] = '\0';
-    //strncpy(buffer, hex, sizeof(buffer));
-    result.data[i] = strtol(buffer,NULL, BASE16);
-  }
-  // unsigned long val = strtol(hex,NULL, BASE16);
-  //   result.data[i/8] = val;
-
-  // int val = (int) strtol(hex,NULL, 32);
-  // result = uint256_create_from_u32(val);
-
   return result;
 }
 
@@ -63,7 +66,36 @@ UInt256 uint256_create_from_hex(const char *hex) {
 // given UInt256 value.
 char *uint256_format_as_hex(UInt256 val) {
   char *hex = NULL;
-  // TODO: implement
+  int index = 7;
+  //Search for the most significant value
+  while(index >= 0) {
+    if(val.data[index] != 0UL) {
+      break;
+    }
+    index--;
+  }
+  //Edge case in which all values are insignificant 
+  if(index == -1) {
+    hex = (char *) malloc(2);
+    strcpy(hex, "0");
+    return hex;
+  }
+
+  int buffLength = 8 * (index + 1) + 1;
+  char buff[buffLength]; //buffer to copy hex without formating
+  char* startPointer = buff;
+
+  for(int i = index; i >= 0; i--) {
+    sprintf(startPointer, "%08x", val.data[i]);
+    startPointer += 8;
+  }
+
+  int buffPointer = 0;
+  while(buff[buffPointer] == '0') { //Searches for position of most significant char
+    buffPointer++;
+  } 
+  hex = (char *) malloc(buffLength - buffPointer);
+  strcpy(hex, buff + buffPointer); //removes leading zeros from beggining of string
   return hex;
 }
 
@@ -118,8 +150,44 @@ UInt256 uint256_negate(UInt256 val) {
 // the left.  Any bits shifted past the most significant bit
 // should be shifted back into the least significant bits.
 UInt256 uint256_rotate_left(UInt256 val, unsigned nbits) {
-  UInt256 result;
-  // TODO: implement
+  UInt256 result = uint256_create_from_u32(0UL);
+  
+  int overFlows = nbits / 32;
+  nbits %= 32;
+  
+  // Shift u64 buckets to the left
+  for(int i = 0; i < overFlows; i++) {
+    val.data[7]= val.data[6];
+    val.data[6]= val.data[5];
+    val.data[5]= val.data[4];
+    val.data[4] = val.data[3];
+    val.data[3] = val.data[2];
+    val.data[2] = val.data[1];
+    val.data[1] = val.data[0];
+    val.data[0] = 0UL;
+  }
+
+  //Return early if no more shifts required
+  if (nbits == 0) {
+    return val;
+  }
+
+  //left shift all u64 values
+  for(int i = 0; i < 8; i++) {
+     result.data[i] = (val.data[i] << nbits); 
+  }
+
+  //get overflowed values that should wrap into higher bucket
+  UInt256 overFlow = uint256_create_from_u32(0UL);
+  for (int i = 0; i < 7 ; i++) {
+    overFlow.data[i] = val.data[i] >> (32 - nbits);
+  }
+
+  //Wrap overflowed values into higher bucket
+  for (int i = 0; i < 7; i++) {
+       result.data[i + 1] = result.data[i + 1] | overFlow.data[i];
+  }
+
   return result;
 }
 
