@@ -280,7 +280,12 @@ void testZeroAddition(TestObjs *objs) {
   result = uint256_add(objs->one, objs->zero);
   ASSERT_SAME(objs->one, result); //testing 1 + 0 + 0 = 1
 
-  result = uint256_add(objs->max, objs->zero);
+  result = uint256_add(objs->zero, objs->one);
+  
+  ASSERT(1U == result.data[0]);
+  ASSERT(0U == result.data[1]);
+  ASSERT(0U == result.data[2]);
+  ASSERT(0U == result.data[3]);
   ASSERT_SAME(objs->max, result);
 
   uint32_t two_data[8] = { 2U };
