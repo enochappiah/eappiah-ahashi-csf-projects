@@ -38,14 +38,13 @@ UInt256 uint256_create_from_hex(const char *hex) {
   
   UInt256 result = uint256_create_from_u32(0);
 
-  int i = 0;
   int windowLen = 8;
   int start = strlen(hex) - windowLen;
   int hexLen = strlen(hex);
 
-  while(i < 8) {  
+  for (int i = 0; i < 8; i++) {
     char window[9];
-    if(start < 0) {
+    if (start < 0) {
         char remainingWindow[hexLen + 1];
         strncpy(remainingWindow, hex, hexLen);
 
@@ -53,14 +52,12 @@ UInt256 uint256_create_from_hex(const char *hex) {
         result.data[i] = strtoul(remainingWindow, NULL, BASE16);
         break;
     }
-    
     strncpy(window, hex + start, windowLen);
     window[windowLen] = '\0';
 
     result.data[i] = strtoul(window, NULL, BASE16);
     hexLen = start;
     start = strlen(hex) - windowLen * (i + 2);
-    i++;
   }
   return result;
 }
@@ -68,37 +65,41 @@ UInt256 uint256_create_from_hex(const char *hex) {
 // Return a dynamically-allocated string of hex digits representing the
 // given UInt256 value.
 char *uint256_format_as_hex(UInt256 val) {
-   char *hex = NULL;
+  
+  char *hex;
   int index = 7;
-  //Search for the most significant value
-  while(index >= 0) {
-    if(val.data[index] != 0UL) {
+  
+  while (index >= 0) {
+    if(val.data[index] != 0U) {
       break;
     }
     index--;
   }
-  //Edge case in which all values are insignificant 
-  if(index == -1) {
-    hex = (char *) malloc(2);
+
+  if (index == -1) { 
+    hex = malloc(2); 
     strcpy(hex, "0");
     return hex;
   }
 
-  int buffLength = 8 * (index + 1) + 1;
-  char buff[buffLength]; //buffer to copy hex without formating
-  char* startPointer = buff;
+  int placeholderLen = 8 * (index + 1) + 1;
+  char placeholder[placeholderLen]; 
+  char* start = placeholder;
 
-  for(int i = index; i >= 0; i--) {
-    sprintf(startPointer, "%08x", val.data[i]);
-    startPointer += 8;
+  for (int i = index; i >= 0; i--) {
+    sprintf(start, "%08x", val.data[i]); 
+    start += 8;
   }
 
   int buffPointer = 0;
-  while(buff[buffPointer] == '0') { //Searches for position of most significant char
+  while (placeholder[buffPointer] == '0') {
     buffPointer++;
   } 
-  hex = (char *) malloc(buffLength - buffPointer);
-  strcpy(hex, buff + buffPointer); //removes leading zeros from beggining of string
+
+  hex = malloc(placeholderLen - buffPointer);
+  strcpy(hex, placeholder + buffPointer); 
+  
+  
   return hex;
 }
 
@@ -135,10 +136,6 @@ UInt256 uint256_sub(UInt256 left, UInt256 right) {
 // Return the two's-complement negation of the given UInt256 value.
 UInt256 uint256_negate(UInt256 val) {
   UInt256 result;
-  // TODO: implement
-  // for (int i = 0; i < 8; i++) {
-  //   val.data[i] == 0U ? val.data[i] = 1U : val.data[i] = 0U;
-  // }
   uint32_t data1[8] = { 1U, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
   UInt256 val1 = uint256_create(data1);
 
@@ -146,6 +143,7 @@ UInt256 uint256_negate(UInt256 val) {
     val.data[i] = ~val.data[i];
   }
   result = uint256_add(val, val1);
+  
   return result;
 }
 
