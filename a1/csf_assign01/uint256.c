@@ -153,52 +153,52 @@ UInt256 uint256_negate(UInt256 val) {
 // the left.  Any bits shifted past the most significant bit
 // should be shifted back into the least significant bits.
 UInt256 uint256_rotate_left(UInt256 val, unsigned nbits) {
-  UInt256 result = uint256_create_from_u32(0UL);
-  
-  int overFlows = nbits / 32;
-  nbits %= 32;
-  
-  // Shift u64 buckets to the left
-  for(int i = 0; i < overFlows; i++) {
-    val.data[7]= val.data[6];
-    val.data[6]= val.data[5];
-    val.data[5]= val.data[4];
-    val.data[4] = val.data[3];
-    val.data[3] = val.data[2];
-    val.data[2] = val.data[1];
-    val.data[1] = val.data[0];
-    val.data[0] = 0UL;
-  }
+    if (nbits == 0) {
+        return val;
+    }
+    
+    nbits %= 32;
 
-  //Return early if no more shifts required
-  if (nbits == 0) {
-    return val;
-  }
+    UInt256 result;
+    for (int i = 0; i < 8; i++) {
+       // left shift
+        result.data[i] = val.data[i] << nbits;
+    }
 
-  //left shift all u64 values
-  for(int i = 0; i < 8; i++) {
-     result.data[i] = (val.data[i] << nbits); 
-  }
+    for (int i = 0; i < 7; i++) {
+        // OR overflowed bits from old window
+        result.data[i + 1] |= val.data[i] >> (32 - nbits);
+    }
 
-  //get overflowed values that should wrap into higher bucket
-  UInt256 overFlow = uint256_create_from_u32(0UL);
-  for (int i = 0; i < 7 ; i++) {
-    overFlow.data[i] = val.data[i] >> (32 - nbits);
-  }
+    // wrap it to the least significant
+    result.data[0] |= val.data[7] >> (32 - nbits);
 
-  //Wrap overflowed values into higher bucket
-  for (int i = 0; i < 7; i++) {
-       result.data[i + 1] = result.data[i + 1] | overFlow.data[i];
-  }
-
-  return result;
+    return result;
 }
 
 // Return the result of rotating every bit in val nbits to
 // the right. Any bits shifted past the least significant bit
 // should be shifted back into the most significant bits.
 UInt256 uint256_rotate_right(UInt256 val, unsigned nbits) {
-  UInt256 result;
-  // TODO: implement
-  return result;
+  if (nbits == 0) {
+        return val;
+    }
+    
+    nbits %= 32;
+
+    UInt256 result;
+    for (int i = 0; i < 8; i++) {
+       // left shift
+        result.data[i] = val.data[i] >> nbits;
+    }
+
+    for (int i = 7; i > 0; i--) {
+        // OR overflowed bits from old window
+        result.data[i - 1] |= val.data[i] << (32 - nbits);
+    }
+
+    // wrap it to the most significant
+    result.data[7] |= val.data[0] << (32 - nbits);
+
+    return result;
 }
