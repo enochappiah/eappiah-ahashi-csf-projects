@@ -35,29 +35,32 @@ UInt256 uint256_create(const uint32_t data[8]) {
 
 // Create a UInt256 value from a string of hexadecimal digits.
 UInt256 uint256_create_from_hex(const char *hex) {
-  //Set all data fields to 0
+  
   UInt256 result = uint256_create_from_u32(0);
-  int index = 0;
-  int substringLength = 8;
-  int prev = strlen(hex);
-  int start = strlen(hex) - substringLength;
-  while(index < 8) {  
-    char substring[9];
+
+  int i = 0;
+  int windowLen = 8;
+  int start = strlen(hex) - windowLen;
+  int hexLen = strlen(hex);
+
+  while(i < 8) {  
+    char window[9];
     if(start < 0) {
-       // Fill bucket with left over segment with less than 16 chars
-        char leftOver[prev + 1];
-        strncpy(leftOver, hex, prev);
-        leftOver[prev] = '\0';
-        result.data[index] = strtoul(leftOver, NULL, 16);
+        char remainingWindow[hexLen + 1];
+        strncpy(remainingWindow, hex, hexLen);
+
+        remainingWindow[hexLen] = '\0';
+        result.data[i] = strtoul(remainingWindow, NULL, BASE16);
         break;
     }
-    //Create substring of 16 length segments from right to left
-    strncpy(substring, hex + start, substringLength);
-    substring[substringLength] = '\0';
-    result.data[index] = strtoul(substring, NULL, 16);
-    prev = start;
-    start = strlen(hex) - substringLength * (index + 2);
-    index++;
+    
+    strncpy(window, hex + start, windowLen);
+    window[windowLen] = '\0';
+
+    result.data[i] = strtoul(window, NULL, BASE16);
+    hexLen = start;
+    start = strlen(hex) - windowLen * (i + 2);
+    i++;
   }
   return result;
 }
@@ -65,38 +68,38 @@ UInt256 uint256_create_from_hex(const char *hex) {
 // Return a dynamically-allocated string of hex digits representing the
 // given UInt256 value.
 char *uint256_format_as_hex(UInt256 val) {
-  char *hex = NULL;
-  int index = 7;
+  char *hexDigits = NULL;
+  int i = 7;
   //Search for the most significant value
-  while(index >= 0) {
-    if(val.data[index] != 0UL) {
+  while(i >= 0) {
+    if(val.data[i] != 0UL) {
       break;
     }
-    index--;
+    i--;
   }
   //Edge case in which all values are insignificant 
-  if(index == -1) {
-    hex = (char *) malloc(2);
-    strcpy(hex, "0");
-    return hex;
+  if(i == -1) {
+    hexDigits = (char *) malloc(2);
+    strcpy(hexDigits, "0");
+    return hexDigits;
   }
 
-  int buffLength = 8 * (index + 1) + 1;
-  char buff[buffLength]; //buffer to copy hex without formating
-  char* startPointer = buff;
+  int placeholderLen = 8 * (i + 1) + 1;
+  char placeholder[placeholderLen]; //buffer to copy hex without formating
+  char* startPointer = placeholder;
 
-  for(int i = index; i >= 0; i--) {
+  for(int i = i; i >= 0; i--) {
     sprintf(startPointer, "%08x", val.data[i]);
     startPointer += 8;
   }
 
-  int buffPointer = 0;
-  while(buff[buffPointer] == '0') { //Searches for position of most significant char
-    buffPointer++;
+  int placeholderPtr = 0;
+  while(placeholder[placeholderPtr] == '0') { //Searches for position of most significant char
+    placeholderPtr++;
   } 
-  hex = (char *) malloc(buffLength - buffPointer);
-  strcpy(hex, buff + buffPointer); //removes leading zeros from beggining of string
-  return hex;
+  hexDigits = (char *) malloc(placeholderLen - placeholderPtr);
+  strcpy(hexDigits, placeholder + placeholderPtr); //removes leading zeros from beggining of string
+  return hexDigits;
 }
 
 // Get 32 bits of data from a UInt256 value.
