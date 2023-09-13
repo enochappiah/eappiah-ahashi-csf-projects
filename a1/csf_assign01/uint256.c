@@ -68,38 +68,38 @@ UInt256 uint256_create_from_hex(const char *hex) {
 // Return a dynamically-allocated string of hex digits representing the
 // given UInt256 value.
 char *uint256_format_as_hex(UInt256 val) {
-  char *hexDigits = NULL;
-  int i = 7;
+   char *hex = NULL;
+  int index = 7;
   //Search for the most significant value
-  while(i >= 0) {
-    if(val.data[i] != 0UL) {
+  while(index >= 0) {
+    if(val.data[index] != 0UL) {
       break;
     }
-    i--;
+    index--;
   }
   //Edge case in which all values are insignificant 
-  if(i == -1) {
-    hexDigits = (char *) malloc(2);
-    strcpy(hexDigits, "0");
-    return hexDigits;
+  if(index == -1) {
+    hex = (char *) malloc(2);
+    strcpy(hex, "0");
+    return hex;
   }
 
-  int placeholderLen = 8 * (i + 1) + 1;
-  char placeholder[placeholderLen]; //buffer to copy hex without formating
-  char* startPointer = placeholder;
+  int buffLength = 8 * (index + 1) + 1;
+  char buff[buffLength]; //buffer to copy hex without formating
+  char* startPointer = buff;
 
-  for(int i = i; i >= 0; i--) {
+  for(int i = index; i >= 0; i--) {
     sprintf(startPointer, "%08x", val.data[i]);
     startPointer += 8;
   }
 
-  int placeholderPtr = 0;
-  while(placeholder[placeholderPtr] == '0') { //Searches for position of most significant char
-    placeholderPtr++;
+  int buffPointer = 0;
+  while(buff[buffPointer] == '0') { //Searches for position of most significant char
+    buffPointer++;
   } 
-  hexDigits = (char *) malloc(placeholderLen - placeholderPtr);
-  strcpy(hexDigits, placeholder + placeholderPtr); //removes leading zeros from beggining of string
-  return hexDigits;
+  hex = (char *) malloc(buffLength - buffPointer);
+  strcpy(hex, buff + buffPointer); //removes leading zeros from beggining of string
+  return hex;
 }
 
 // Get 32 bits of data from a UInt256 value.
