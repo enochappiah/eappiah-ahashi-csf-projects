@@ -38,26 +38,28 @@ UInt256 uint256_create_from_hex(const char *hex) {
   
   UInt256 result = uint256_create_from_u32(0);
 
-  int windowLen = 8;
-  int start = strlen(hex) - windowLen;
+  int curStringLength = 8;
+  int start = strlen(hex) - curStringLength;
   int hexLen = strlen(hex);
 
-  for (int i = 0; i < 8; i++) {
-    char window[9];
-    if (start < 0) {
-        char remainingWindow[hexLen + 1];
-        strncpy(remainingWindow, hex, hexLen);
 
-        remainingWindow[hexLen] = '\0';
-        result.data[i] = strtoul(remainingWindow, NULL, BASE16);
+  for (int i = 0; i < 8; i++) {
+    char curString[9];
+    // populate with the spare segements
+    if (start < 0) {
+        char spareSegments[hexLen + 1];
+        strncpy(spareSegments, hex, hexLen);
+
+        spareSegments[hexLen] = '\0';
+        result.data[i] = strtoul(spareSegments, NULL, BASE16);
         break;
     }
-    strncpy(window, hex + start, windowLen);
-    window[windowLen] = '\0';
+    strncpy(curString, hex + start, curStringLength);
+    curString[curStringLength] = '\0'; // need to null terminate string to avoid an invalid read
 
-    result.data[i] = strtoul(window, NULL, BASE16);
+    result.data[i] = strtoul(curString, NULL, BASE16);
     hexLen = start;
-    start = strlen(hex) - windowLen * (i + 2);
+    start = strlen(hex) - curStringLength * (i + 2);
   }
   return result;
 }
@@ -65,11 +67,10 @@ UInt256 uint256_create_from_hex(const char *hex) {
 // Return a dynamically-allocated string of hex digits representing the
 // given UInt256 value.
 char *uint256_format_as_hex(UInt256 val) {
-  
   char *hex;
   int index = 7;
   
-  while (index >= 0) {
+  while (index >= 0) { // finds most significant val
     if(val.data[index] != 0U) {
       break;
     }
@@ -93,6 +94,7 @@ char *uint256_format_as_hex(UInt256 val) {
   }
 
   int buffPointer = 0;
+  // finds most signficiant char
   while (placeholder[buffPointer] == '0') {
     buffPointer++;
   } 
@@ -100,8 +102,6 @@ char *uint256_format_as_hex(UInt256 val) {
   hex = malloc(placeholderLen - buffPointer);
   // chop leading zeros
   strcpy(hex, placeholder + buffPointer); 
-  
-  
   return hex;
 }
 
@@ -188,8 +188,9 @@ UInt256 uint256_rotate_right(UInt256 val, unsigned nbits) {
     UInt256 result = uint256_create_from_u32(0U);
 
     for (int i = 0; i < 8; i++) {
-        int index = (i - windowsLeftToShift + 8) % 8; // +8 to ensure positive modulus operation
-        int overflownIndex = (index - 1 + 8) % 8; // Handle underflow by adding 8
+      // adding 8 to account for unintended modulo operations like negative
+        int index = (i - windowsLeftToShift + 8) % 8;
+        int overflownIndex = (index - 1 + 8) % 8;
 
         // take care of shifted part
         result.data[index] |= val.data[i] >> bitsLeftToShift;
