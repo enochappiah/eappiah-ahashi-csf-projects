@@ -82,6 +82,7 @@ char *uint256_format_as_hex(UInt256 val) {
     return hex;
   }
 
+  // create the buffer
   int placeholderLen = 8 * (index + 1) + 1;
   char placeholder[placeholderLen]; 
   char* start = placeholder;
@@ -97,6 +98,7 @@ char *uint256_format_as_hex(UInt256 val) {
   } 
 
   hex = malloc(placeholderLen - buffPointer);
+  // chop leading zeros
   strcpy(hex, placeholder + buffPointer); 
   
   
@@ -149,121 +151,53 @@ UInt256 uint256_negate(UInt256 val) {
 
 // Return the result of rotating every bit in val nbits to
 // the left.  Any bits shifted past the most significant bit
-// should be shifted back into the least significant bits.
-// UInt256 uint256_rotate_left(UInt256 val, unsigned nbits) {
-//     if (nbits == 0) {
-//         return val;
-//     }
-    
-//     nbits %= 32;
-
-//     if (nbits == 0) {
-//       return val;
-//     }
-
-//     UInt256 result;
-//     for (int i = 0; i < 8; i++) {
-//        // left shift
-//         result.data[i] = val.data[i] << nbits;
-//     }
-
-//     for (int i = 0; i < 7; i++) {
-//         // OR overflowed bits from old window
-//         result.data[i + 1] |= val.data[i] >> (32 - nbits);
-//     }
-
-//     // wrap it to the least significant
-//     result.data[0] |= val.data[7] >> (32 - nbits);
-
-//     return result;
-// }
-
+// should be shifted back into the least significant bits
 UInt256 uint256_rotate_left(UInt256 val, unsigned nbits) {
     if (nbits % 256 == 0) {
         return val;
     }
 
-    UInt256 result = {{0}};  // Zero out the entire structure
-
-    unsigned blocksToShift = (nbits / 32) % 8;
-    unsigned bitsToShift = nbits % 32;
+    unsigned windowsLeftToShift = (nbits / 32) % 8;
+    unsigned bitsLeftToShift = nbits % 32;
+    UInt256 result = uint256_create_from_u32(0U);
 
     for (int i = 0; i < 8; i++) {
-        // Target indices after block rotation
-        int primaryIdx = (i + blocksToShift) % 8;
-        int overflowIdx = (primaryIdx + 1) % 8;
+        int index = (i + windowsLeftToShift) % 8;
+        int overflownIndex = (index + 1) % 8;
 
-        // Handle main shifted part.
-        result.data[primaryIdx] |= val.data[i] << bitsToShift;
+        // take care of shifted part
+        result.data[index] |= val.data[i] << bitsLeftToShift;
 
-        // Handle overflowed bits, taking care of wrapping.
-        result.data[overflowIdx] |= val.data[i] >> (32 - bitsToShift);
+        // take care of overflown bits and handle wrapping
+        result.data[overflownIndex] |= val.data[i] >> (32 - bitsLeftToShift);
     }
 
     return result;
 }
-
-
-
 
 // Return the result of rotating every bit in val nbits to
 // the right. Any bits shifted past the least significant bit
 // should be shifted back into the most significant bits.
-// UInt256 uint256_rotate_right(UInt256 val, unsigned nbits) {
-//   if (nbits == 0) {
-//         return val;
-//     }
-    
-//     nbits %= 32;
-
-//     if (nbits == 0) {
-//       return val;
-//     }
-
-//     UInt256 result;
-//     for (int i = 0; i < 8; i++) {
-//        // left shift
-//         result.data[i] = val.data[i] >> nbits;
-//     }
-
-//     for (int i = 7; i > 0; i--) {
-//         // OR overflowed bits from old window
-//         result.data[i - 1] |= val.data[i] << (32 - nbits);
-//     }
-
-//     // wrap it to the most significant
-//     result.data[7] |= val.data[0] << (32 - nbits);
-
-//     return result;
-// }
-
 UInt256 uint256_rotate_right(UInt256 val, unsigned nbits) {
     if (nbits % 256 == 0) {
         return val;
     }
-
-    UInt256 result = {{0}};  // Zero out the entire structure
-
-    unsigned blocksToShift = (nbits / 32) % 8;
-    unsigned bitsToShift = nbits % 32;
+    
+    unsigned windowsLeftToShift = (nbits / 32) % 8;
+    unsigned bitsLeftToShift = nbits % 32;
+    UInt256 result = uint256_create_from_u32(0U);
 
     for (int i = 0; i < 8; i++) {
-        // Target indices after block rotation
-        int primaryIdx = (i - blocksToShift + 8) % 8; // +8 to ensure positive modulus operation
-        int overflowIdx = (primaryIdx - 1 + 8) % 8; // Handle underflow by adding 8
+        int index = (i - windowsLeftToShift + 8) % 8; // +8 to ensure positive modulus operation
+        int overflownIndex = (index - 1 + 8) % 8; // Handle underflow by adding 8
 
-        // Handle main shifted part.
-        result.data[primaryIdx] |= val.data[i] >> bitsToShift;
+        // take care of shifted part
+        result.data[index] |= val.data[i] >> bitsLeftToShift;
 
-        // Handle overflowed bits, taking care of wrapping.
-        if(bitsToShift != 0) { // To avoid unintended behavior with 32-bit shift
-            result.data[overflowIdx] |= val.data[i] << (32 - bitsToShift);
+        // take care of overflown bits and handle wrapping
+        if(bitsLeftToShift != 0) { // handle potential undefined behavior with shifts
+            result.data[overflownIndex] |= val.data[i] << (32 - bitsLeftToShift);
         }
     }
-
     return result;
 }
-
-
-
-

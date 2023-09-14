@@ -52,6 +52,8 @@ void test_zero_addition(TestObjs *objs);
 void test_zero_sub(TestObjs *objs);
 void test_add_overflow(TestObjs *objs);
 void test_sub_overflow(TestObjs *objs);
+void test_add_with_fact(TestObjs *objs);
+void test_sub_with_fact(TestObjs *objs);
 
 
 
@@ -76,6 +78,8 @@ int main(int argc, char **argv) {
   TEST(test_zero_sub);
   TEST(test_add_overflow);
   TEST(test_sub_overflow);
+  TEST(test_add_with_fact);
+  TEST(test_sub_with_fact);
 
   TEST_FINI();
 }
@@ -260,17 +264,25 @@ void test_rotate_left(TestObjs *objs) { //TODO
   ASSERT(0U == result.data[6]);
   ASSERT(0xD0000000U == result.data[7]);
 
-  // Rotate by 0
+  //try to rotate by 0
   result = uint256_rotate_left(objs->msb_set, 0);
   ASSERT_SAME(objs->msb_set, result);
 
-  // Rotate by 256
+  // try to rotate by 256
   result = uint256_rotate_left(objs->msb_set, 256);
   ASSERT_SAME(objs->msb_set, result);
 
-  // Rotate a zero
+  // try to rotate the number zero
   result = uint256_rotate_left(objs->zero, 123); // You can pick any number for rotation
   ASSERT_SAME(objs->zero, result);
+
+  // try to rotate one by 255 bits
+  result = uint256_rotate_left(objs->one, 255);
+  ASSERT_SAME(objs->msb_set, result);
+
+  // try to rotate by 1024 which is like rotating by 256 four different times
+  result = uint256_rotate_left(objs->msb_set, 1024);
+  ASSERT_SAME(objs->msb_set, result);
 }
 
 void test_rotate_right(TestObjs *objs) { //TODO
@@ -293,19 +305,21 @@ void test_rotate_right(TestObjs *objs) { //TODO
   ASSERT(0U == result.data[6]);
   ASSERT(0xBCD00000U == result.data[7]);
 
-  // Rotate by 0
+  // try to rotate by 0
 result = uint256_rotate_right(objs->msb_set, 0);
 ASSERT_SAME(objs->msb_set, result);
 
-// Rotate by 256
+// try to rotate by 256
 result = uint256_rotate_right(objs->msb_set, 256);
 ASSERT_SAME(objs->msb_set, result);
 
-// Rotate a zero
+// try to rotate the number zero
 result = uint256_rotate_right(objs->zero, 123); // You can pick any number for rotation
 ASSERT_SAME(objs->zero, result);
 
-
+// try to rotate by 1024 which is like rotating by 256 four different times
+result = uint256_rotate_right(objs->msb_set, 1024);
+ASSERT_SAME(objs->msb_set, result);
 
 }
 
@@ -372,6 +386,7 @@ void test_zero_sub(TestObjs *objs) {
   ASSERT_SAME(objs->max, result);
 }
 
+// ensure overflow happens when adding one to maxVal
 void test_add_overflow(TestObjs *objs) {
   UInt256 result = uint256_add(objs->max, objs->one);
 
@@ -385,6 +400,7 @@ void test_add_overflow(TestObjs *objs) {
   ASSERT(result.data[0] == 0U);
 }
 
+// ensure overflow happens when subtracting one from zero
 void test_sub_overflow(TestObjs *objs) {
   UInt256 result = uint256_sub(objs->zero, objs->one);
   ASSERT(0xFFFFFFFFU == result.data[0]);
@@ -398,26 +414,64 @@ void test_sub_overflow(TestObjs *objs) {
 
 }
 
+// used genfact to test addition
+void test_add_with_fact(TestObjs *objs) {
+  UInt256 left, right, result;
 
-void test_shift_right(TestObjs *objs) {
-  UInt256 result;
-
-  // rotating 1 right by 1 position should result in a value with just
-  // the most-significant bit set
-  result = uint256_rotate_right(objs->one, 1);
-  ASSERT_SAME(objs->msb_set, result);
-
-  // after rotating the "rot" value right by 4 bits, the resulting value should be
-  //   BCD00000 00000000 00000000 00000000 00000000 00000000 00000000 0000000A
-  result = uint256_rotate_right(objs->rot, 4);
-  ASSERT(0x0000000AU == result.data[0]);
-  ASSERT(0U == result.data[1]);
-  ASSERT(0U == result.data[2]);
-  ASSERT(0U == result.data[3]);
-  ASSERT(0U == result.data[4]);
-  ASSERT(0U == result.data[5]);
-  ASSERT(0U == result.data[6]);
-  ASSERT(0xBCD00000U == result.data[7]);    
+  left.data[0] = 0xbd3f2275U;
+  left.data[1] = 0xdaade3feU;
+  left.data[2] = 0x8f8991d5U;
+  left.data[3] = 0x4b5feaa9U;
+  left.data[4] = 0x19448805U;
+  left.data[5] = 0x525c1526U;
+  left.data[6] = 0x4719744bU;
+  left.data[7] = 0x50a3b0bcU;
+  right.data[0] = 0x90066acbU;
+  right.data[1] = 0xf3e33d14U;
+  right.data[2] = 0x39edfa60U;
+  right.data[3] = 0xb3da172dU;
+  right.data[4] = 0x2b92cedeU;
+  right.data[5] = 0x2594beccU;
+  right.data[6] = 0x0d571731U;
+  right.data[7] = 0x996fc7bdU;
+  result = uint256_add(left, right);
+  ASSERT(0x4d458d40U == result.data[0]);
+  ASSERT(0xce912113U == result.data[1]);
+  ASSERT(0xc9778c36U == result.data[2]);
+  ASSERT(0xff3a01d6U == result.data[3]);
+  ASSERT(0x44d756e3U == result.data[4]);
+  ASSERT(0x77f0d3f2U == result.data[5]);
+  ASSERT(0x54708b7cU == result.data[6]);
+  ASSERT(0xea137879U == result.data[7]);
 }
 
+// used genfact to test with subtraction
+void test_sub_with_fact(TestObjs *objs) {
+  UInt256 left, right, result;
 
+  left.data[0] = 0x4d458d40U;
+  left.data[1] = 0xce912113U;
+  left.data[2] = 0xc9778c36U;
+  left.data[3] = 0xff3a01d6U;
+  left.data[4] = 0x44d756e3U;
+  left.data[5] = 0x77f0d3f2U;
+  left.data[6] = 0x54708b7cU;
+  left.data[7] = 0xea137879U;
+  right.data[0] = 0x90066acbU;
+  right.data[1] = 0xf3e33d14U;
+  right.data[2] = 0x39edfa60U;
+  right.data[3] = 0xb3da172dU;
+  right.data[4] = 0x2b92cedeU;
+  right.data[5] = 0x2594beccU;
+  right.data[6] = 0x0d571731U;
+  right.data[7] = 0x996fc7bdU;
+  result = uint256_sub(left, right);
+  ASSERT(0xbd3f2275U == result.data[0]);
+  ASSERT(0xdaade3feU == result.data[1]);
+  ASSERT(0x8f8991d5U == result.data[2]);
+  ASSERT(0x4b5feaa9U == result.data[3]);
+  ASSERT(0x19448805U == result.data[4]);
+  ASSERT(0x525c1526U == result.data[5]);
+  ASSERT(0x4719744bU == result.data[6]);
+  ASSERT(0x50a3b0bcU == result.data[7]);
+}
