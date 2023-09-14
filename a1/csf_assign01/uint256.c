@@ -150,53 +150,120 @@ UInt256 uint256_negate(UInt256 val) {
 // Return the result of rotating every bit in val nbits to
 // the left.  Any bits shifted past the most significant bit
 // should be shifted back into the least significant bits.
+// UInt256 uint256_rotate_left(UInt256 val, unsigned nbits) {
+//     if (nbits == 0) {
+//         return val;
+//     }
+    
+//     nbits %= 32;
+
+//     if (nbits == 0) {
+//       return val;
+//     }
+
+//     UInt256 result;
+//     for (int i = 0; i < 8; i++) {
+//        // left shift
+//         result.data[i] = val.data[i] << nbits;
+//     }
+
+//     for (int i = 0; i < 7; i++) {
+//         // OR overflowed bits from old window
+//         result.data[i + 1] |= val.data[i] >> (32 - nbits);
+//     }
+
+//     // wrap it to the least significant
+//     result.data[0] |= val.data[7] >> (32 - nbits);
+
+//     return result;
+// }
+
 UInt256 uint256_rotate_left(UInt256 val, unsigned nbits) {
-    if (nbits == 0) {
+    if (nbits % 256 == 0) {
         return val;
     }
-    
-    nbits %= 32;
 
-    UInt256 result;
+    UInt256 result = {{0}};  // Zero out the entire structure
+
+    unsigned blocksToShift = (nbits / 32) % 8;
+    unsigned bitsToShift = nbits % 32;
+
     for (int i = 0; i < 8; i++) {
-       // left shift
-        result.data[i] = val.data[i] << nbits;
-    }
+        // Target indices after block rotation
+        int primaryIdx = (i + blocksToShift) % 8;
+        int overflowIdx = (primaryIdx + 1) % 8;
 
-    for (int i = 0; i < 7; i++) {
-        // OR overflowed bits from old window
-        result.data[i + 1] |= val.data[i] >> (32 - nbits);
-    }
+        // Handle main shifted part.
+        result.data[primaryIdx] |= val.data[i] << bitsToShift;
 
-    // wrap it to the least significant
-    result.data[0] |= val.data[7] >> (32 - nbits);
+        // Handle overflowed bits, taking care of wrapping.
+        result.data[overflowIdx] |= val.data[i] >> (32 - bitsToShift);
+    }
 
     return result;
 }
+
+
+
 
 // Return the result of rotating every bit in val nbits to
 // the right. Any bits shifted past the least significant bit
 // should be shifted back into the most significant bits.
+// UInt256 uint256_rotate_right(UInt256 val, unsigned nbits) {
+//   if (nbits == 0) {
+//         return val;
+//     }
+    
+//     nbits %= 32;
+
+//     if (nbits == 0) {
+//       return val;
+//     }
+
+//     UInt256 result;
+//     for (int i = 0; i < 8; i++) {
+//        // left shift
+//         result.data[i] = val.data[i] >> nbits;
+//     }
+
+//     for (int i = 7; i > 0; i--) {
+//         // OR overflowed bits from old window
+//         result.data[i - 1] |= val.data[i] << (32 - nbits);
+//     }
+
+//     // wrap it to the most significant
+//     result.data[7] |= val.data[0] << (32 - nbits);
+
+//     return result;
+// }
+
 UInt256 uint256_rotate_right(UInt256 val, unsigned nbits) {
-  if (nbits == 0) {
+    if (nbits % 256 == 0) {
         return val;
     }
-    
-    nbits %= 32;
 
-    UInt256 result;
+    UInt256 result = {{0}};  // Zero out the entire structure
+
+    unsigned blocksToShift = (nbits / 32) % 8;
+    unsigned bitsToShift = nbits % 32;
+
     for (int i = 0; i < 8; i++) {
-       // left shift
-        result.data[i] = val.data[i] >> nbits;
-    }
+        // Target indices after block rotation
+        int primaryIdx = (i - blocksToShift + 8) % 8; // +8 to ensure positive modulus operation
+        int overflowIdx = (primaryIdx - 1 + 8) % 8; // Handle underflow by adding 8
 
-    for (int i = 7; i > 0; i--) {
-        // OR overflowed bits from old window
-        result.data[i - 1] |= val.data[i] << (32 - nbits);
-    }
+        // Handle main shifted part.
+        result.data[primaryIdx] |= val.data[i] >> bitsToShift;
 
-    // wrap it to the most significant
-    result.data[7] |= val.data[0] << (32 - nbits);
+        // Handle overflowed bits, taking care of wrapping.
+        if(bitsToShift != 0) { // To avoid unintended behavior with 32-bit shift
+            result.data[overflowIdx] |= val.data[i] << (32 - bitsToShift);
+        }
+    }
 
     return result;
 }
+
+
+
+

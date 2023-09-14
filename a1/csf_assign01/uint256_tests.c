@@ -52,7 +52,6 @@ void test_zero_addition(TestObjs *objs);
 void test_zero_sub(TestObjs *objs);
 void test_add_overflow(TestObjs *objs);
 void test_sub_overflow(TestObjs *objs);
-void test_shift_left(TestObjs *objs);
 
 
 
@@ -77,7 +76,6 @@ int main(int argc, char **argv) {
   TEST(test_zero_sub);
   TEST(test_add_overflow);
   TEST(test_sub_overflow);
-  TEST(test_shift_left);
 
   TEST_FINI();
 }
@@ -261,6 +259,18 @@ void test_rotate_left(TestObjs *objs) { //TODO
   ASSERT(0U == result.data[5]);
   ASSERT(0U == result.data[6]);
   ASSERT(0xD0000000U == result.data[7]);
+
+  // Rotate by 0
+  result = uint256_rotate_left(objs->msb_set, 0);
+  ASSERT_SAME(objs->msb_set, result);
+
+  // Rotate by 256
+  result = uint256_rotate_left(objs->msb_set, 256);
+  ASSERT_SAME(objs->msb_set, result);
+
+  // Rotate a zero
+  result = uint256_rotate_left(objs->zero, 123); // You can pick any number for rotation
+  ASSERT_SAME(objs->zero, result);
 }
 
 void test_rotate_right(TestObjs *objs) { //TODO
@@ -282,6 +292,21 @@ void test_rotate_right(TestObjs *objs) { //TODO
   ASSERT(0U == result.data[5]);
   ASSERT(0U == result.data[6]);
   ASSERT(0xBCD00000U == result.data[7]);
+
+  // Rotate by 0
+result = uint256_rotate_right(objs->msb_set, 0);
+ASSERT_SAME(objs->msb_set, result);
+
+// Rotate by 256
+result = uint256_rotate_right(objs->msb_set, 256);
+ASSERT_SAME(objs->msb_set, result);
+
+// Rotate a zero
+result = uint256_rotate_right(objs->zero, 123); // You can pick any number for rotation
+ASSERT_SAME(objs->zero, result);
+
+
+
 }
 
 void test_zero_addition(TestObjs *objs) {
@@ -373,41 +398,6 @@ void test_sub_overflow(TestObjs *objs) {
 
 }
 
-void test_shift_left(TestObjs *objs) {
-  uint32_t data1[8] = { 0U, 0U, 0U, 0U, 0U, 0U, 0U, 1U }; //10000000
-  UInt256 result = uint256_create(data1);
-
-
-  // rotating the value with just the most significant bit set
-  // one position to the left should result in the value equal to 1
-  // (i.e., the value with only the least significant bit set)
-  //result = uint256_rotate_left(result, 1); //00000001
-  // ASSERT(1U == result.data[0]);
-  // ASSERT(0U == result.data[1]);
-  // ASSERT(0U == result.data[2]);
-  // ASSERT(0U == result.data[3]);
-  // ASSERT(0U == result.data[4]);
-  // ASSERT(0U == result.data[5]);
-  // ASSERT(0U == result.data[6]);
-  // ASSERT(0U == result.data[7]);
-  // ASSERT_SAME(objs->one, result);
-
-  result = uint256_rotate_left(objs->msb_set, 0);
-  ASSERT_SAME(objs->msb_set, result);
-
-  // after rotating the "rot" value left by 4 bits, the resulting value should be
-  //   CD000000 00000000 00000000 00000000 00000000 00000000 00000000 000000AB
-  result = uint256_rotate_left(objs->rot, 5);
-  ASSERT(0x000000ABU == result.data[0]);
-  ASSERT(0U == result.data[1]);
-  ASSERT(0U == result.data[2]);
-  ASSERT(0U == result.data[3]);
-  ASSERT(0U == result.data[4]);
-  ASSERT(0U == result.data[5]);
-  ASSERT(0U == result.data[6]);
-  ASSERT(0xCD000000U == result.data[7]);
-
-}
 
 void test_shift_right(TestObjs *objs) {
   UInt256 result;
