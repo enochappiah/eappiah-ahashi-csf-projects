@@ -90,7 +90,9 @@ int wc_readnext(FILE *in, unsigned char *w) {
 // Convert the NUL-terminated character string in the array
 // pointed-to by w so that every letter is lower-case.
 void wc_tolower(unsigned char *w) {
-  size_t length = (size_t) (unsigned char*) sizeof(w) / sizeof(w[0]);
+  size_t length = (size_t) (char*) sizeof(w) * sizeof(w[0]);
+  // size_t length = (size_t) (char*) sizeof(w) / sizeof(char *);
+
   printf("\n%zu\n", length);
   size_t i = 0;
   while(w[i] != '\0') {
@@ -101,12 +103,58 @@ void wc_tolower(unsigned char *w) {
   }
 }
 
+size_t provideLength(unsigned char *w ) {
+  size_t length = 0;
+  size_t i = 0;
+
+  unsigned char *p = w;
+  //move pointer to the end of the string's null terminator
+  while(*p != '\0') {
+    p++;
+    
+  }
+  //move pointer once backwards to last char in string
+  p--;
+  length = (size_t) p;
+  printf("\n%zu\n", length );
+
+  return length;
+}
+
+//provides pointer to the end of a string
+unsigned char* provideEndPtr(unsigned char *w ) {
+  size_t length = 0;
+  size_t i = 0;
+
+  unsigned char *p = w;
+  //move pointer to the end of the string's null terminator
+  while(*p != '\0') {
+    p++;
+    
+  }
+  //move pointer once backwards to last char in string
+  p--;
+
+  return p;
+}
+
 // Remove any non-alphaabetic characters from the end of the
 // NUL-terminated character string pointed-to by w.
 void wc_trim_non_alpha(unsigned char *w) {
   // TODO: implement
-  size_t length = (size_t) (unsigned char*) sizeof(w) / sizeof(w[0]);
-  printf("\n%zu\n", length);
+
+  //size_t length = provideLength(w);
+
+  unsigned char *p = provideEndPtr(w);
+
+  while(p >= w) {
+    if (wc_isalpha(*p) == 0) {
+      //TODO move null terminator back OR shorten w 
+    }
+  }
+
+
+  // printf("\n%zu\n", );
 }
 
 // Search the specified linked list of WordEntry objects for an object
