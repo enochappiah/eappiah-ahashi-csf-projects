@@ -5,6 +5,8 @@
 // - malloc
 // - free
 
+#include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include "wcfuncs.h"
 
@@ -88,19 +90,14 @@ int wc_readnext(FILE *in, unsigned char *w) {
 // Convert the NUL-terminated character string in the array
 // pointed-to by w so that every letter is lower-case.
 void wc_tolower(unsigned char *w) {
-  // TODO: implement
-  size_t w_length = (size_t) sizeof(w) ; //buggy statement here needs fixing
-  
-
-
-
-  size_t otherlength = sizeof((unsigned char*) w);
-  printf("%zu\n", otherlength);
-
-  for(size_t i = 0; i < otherlength; i++) {
+  size_t length = (size_t) (unsigned char*) sizeof(w) / sizeof(w[0]);
+  printf("\n%zu\n", length);
+  size_t i = 0;
+  while(w[i] != '\0') {
     if(w[i] >= 'A' && w[i] <= 'Z') {
       w[i] = w[i] + ('a' - 'A');
     }
+    i++;
   }
 }
 
@@ -108,6 +105,8 @@ void wc_tolower(unsigned char *w) {
 // NUL-terminated character string pointed-to by w.
 void wc_trim_non_alpha(unsigned char *w) {
   // TODO: implement
+  size_t length = (size_t) (unsigned char*) sizeof(w) / sizeof(w[0]);
+  printf("\n%zu\n", length);
 }
 
 // Search the specified linked list of WordEntry objects for an object
