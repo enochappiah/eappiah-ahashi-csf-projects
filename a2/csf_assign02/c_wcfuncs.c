@@ -55,13 +55,19 @@ void wc_str_copy(unsigned char *dest, const unsigned char *source) {
 //   '\f'
 //   '\v'
 int wc_isspace(unsigned char c) {
-  // TODO: implement
+  if (c == ' ' || c == '\t'|| c== '\r' || c == '\n' || c == '\f' || c == '\v' ) {
+    return 1;
+  }
+  return 0;
 }
 
 // Return 1 if the character code in c is an alphabetic character
 // ('A' through 'Z' or 'a' through 'z'), 0 otherwise.
 int wc_isalpha(unsigned char c) {
-  // TODO: implement
+  if ( (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ) {
+    return 1;
+  }
+  return 0;
 }
 
 // Read the next word from given input stream, storing
@@ -83,6 +89,19 @@ int wc_readnext(FILE *in, unsigned char *w) {
 // pointed-to by w so that every letter is lower-case.
 void wc_tolower(unsigned char *w) {
   // TODO: implement
+  size_t w_length = (size_t) sizeof(w) ; //buggy statement here needs fixing
+  
+
+
+
+  size_t otherlength = sizeof((unsigned char*) w);
+  printf("%zu\n", otherlength);
+
+  for(size_t i = 0; i < otherlength; i++) {
+    if(w[i] >= 'A' && w[i] <= 'Z') {
+      w[i] = w[i] + ('a' - 'A');
+    }
+  }
 }
 
 // Remove any non-alphaabetic characters from the end of the

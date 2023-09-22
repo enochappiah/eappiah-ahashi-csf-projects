@@ -15,6 +15,7 @@ int main(int argc, char **argv) {
   uint32_t best_word_count = 0;
 
   // TODO: implement
+  
 
   printf("Total words read: %u\n", (unsigned int) total_words);
   printf("Unique words read: %u\n", (unsigned int) unique_words);
