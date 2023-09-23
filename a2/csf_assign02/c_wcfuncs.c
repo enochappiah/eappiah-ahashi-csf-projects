@@ -5,10 +5,50 @@
 // - malloc
 // - free
 
-#include <stddef.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include "wcfuncs.h"
+
+
+size_t provideLength(unsigned char *w ) {
+  size_t length = 0;
+  size_t i = 0;
+
+  unsigned char *p = w;
+  //move pointer to the end of the string's null terminator
+  while (*p != '\0') {
+    p++;
+    length++;
+  }
+
+  //move pointer once backwards to last char in string
+  p--;
+  length--;
+  
+  // printf("\n%zu\n", length);
+  return length;
+}
+
+//provides pointer to the end of a string
+unsigned char* provideEndPtr(unsigned char *w ) {
+  size_t length = 0;
+  size_t i = 0;
+
+  unsigned char *p = w;
+  //move pointer to the end of the string's null terminator
+  while(*p != '\0') {
+    p++;
+    length++;
+    
+  }
+  //move pointer once backwards to last char in string
+  p--;
+  length--;
+
+  printf("\n%zu\n", length);
+
+  return p;
+}
+
 
 // Compute a hash code for the given NUL-terminated
 // character string.
@@ -87,74 +127,38 @@ int wc_readnext(FILE *in, unsigned char *w) {
   // TODO: implement
 }
 
+
+
 // Convert the NUL-terminated character string in the array
 // pointed-to by w so that every letter is lower-case.
 void wc_tolower(unsigned char *w) {
-  size_t length = (size_t) (char*) sizeof(w) * sizeof(w[0]);
-  // size_t length = (size_t) (char*) sizeof(w) / sizeof(char *);
-
-  printf("\n%zu\n", length);
-  size_t i = 0;
-  while(w[i] != '\0') {
-    if(w[i] >= 'A' && w[i] <= 'Z') {
-      w[i] = w[i] + ('a' - 'A');
+  size_t i = 0; //conventional datatype for array sizes
+  while(w[i] != '\0') { //looping until end of string
+    if(w[i] >= 'A' && w[i] <= 'Z') { //if ASCII value are any of the capital letters 
+      w[i] = w[i] + ('a' - 'A'); //convert the char using the ASCII offset 32
     }
     i++;
   }
 }
 
-size_t provideLength(unsigned char *w ) {
-  size_t length = 0;
-  size_t i = 0;
-
-  unsigned char *p = w;
-  //move pointer to the end of the string's null terminator
-  while(*p != '\0') {
-    p++;
-    
+//A recursive call for wc_trim_non_alpha function
+unsigned char * recursiveTrim(unsigned char *p) {
+  if (wc_isalpha(*p)) { //Base case: if the char is a letter, func should return because first alphabetic char is found
+    p++; //p is currently at alphabetic char, so addition to move it back to previously non-alphabetic char
+    *p = '\0'; //insert null terminator at that position to end the string early
+    return p;
   }
-  //move pointer once backwards to last char in string
-  p--;
-  length = (size_t) p;
-  printf("\n%zu\n", length );
-
-  return length;
+  p--; //keep iterating toward front of string
+  return recursiveTrim(p); //recurive call with updated string array index
 }
 
-//provides pointer to the end of a string
-unsigned char* provideEndPtr(unsigned char *w ) {
-  size_t length = 0;
-  size_t i = 0;
 
-  unsigned char *p = w;
-  //move pointer to the end of the string's null terminator
-  while(*p != '\0') {
-    p++;
-    
-  }
-  //move pointer once backwards to last char in string
-  p--;
-
-  return p;
-}
 
 // Remove any non-alphaabetic characters from the end of the
 // NUL-terminated character string pointed-to by w.
 void wc_trim_non_alpha(unsigned char *w) {
-  // TODO: implement
-
-  //size_t length = provideLength(w);
-
-  unsigned char *p = provideEndPtr(w);
-
-  while(p >= w) {
-    if (wc_isalpha(*p) == 0) {
-      //TODO move null terminator back OR shorten w 
-    }
-  }
-
-
-  // printf("\n%zu\n", );
+  unsigned char *p = provideEndPtr(w); //provides pointer to the end of parameter string
+  w = recursiveTrim(p); 
 }
 
 // Search the specified linked list of WordEntry objects for an object
