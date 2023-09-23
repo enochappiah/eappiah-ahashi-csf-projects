@@ -55,10 +55,54 @@ wc_hash:
  * C function prototype:
  *    int wc_str_compare(const unsigned char *lhs, const unsigned char *rhs);
  */
-	.globl wc_str_compare
+.globl wc_str_compare
 wc_str_compare:
-	/* TODO: implement */
-	ret
+    movzbl (%rdi), %eax  # Load the first byte of lhs into 32 bit eax register
+    movzbl (%rsi), %ecx  # Load the first byte of rhs into 32 bit ecx register
+
+    # Check if we are at the end of either string
+.Ltop:  
+    test %eax, %eax      # Is lhs byte '\0'
+	# If lhs is null terminated, that means rhs could be greater or could potentially also end there
+    jz .Lcheck_rhs_end_of_string
+
+    test %ecx, %ecx      # Is rhs byte '\0'
+	# If rhs is null terminated, by this point we are sure that lhs is greater
+    jz .Llhs_is_greater
+
+    # Compare characters from lhs and rhs
+    cmp %ecx, %eax
+	# If different characters jump to Lfound_difference
+    jne .Lnot_same
+
+    # Move to the next character
+    inc %rdi
+    inc %rsi
+
+    # Load next characters for comparison in the next iteration
+    movzbl (%rdi), %eax  # Load next byte of lhs
+    movzbl (%rsi), %ecx  # Load next byte of rhs
+    jmp .Ltop
+
+.Lcheck_rhs_end_of_string:
+    test %ecx, %ecx     # Check if rhs byte is '\0'
+	# If it is, that means both lhs and rhs ended and they are equal
+    jz .Lstrings_equal
+	# Else, rhs is indeed greater than lhs so return a negative value
+    mov $-1, %eax
+    ret
+
+.Llhs_is_greater:
+    mov $1, %eax
+    ret
+
+.Lstrings_equal:
+    mov $0, %eax      # Set return value to 0 as strings are identical
+    ret
+
+.Lnot_same:
+    sub %ecx, %eax     # Subtract to get the difference
+    ret
 
 /*
  * Copy NUL-terminated source string to the destination buffer.

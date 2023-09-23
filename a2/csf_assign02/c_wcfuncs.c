@@ -5,6 +5,7 @@
 // - malloc
 // - free
 
+#include <stdint.h>
 #include <stdlib.h>
 #include "wcfuncs.h"
 
@@ -55,7 +56,13 @@ unsigned char* provideEndPtr(unsigned char *w ) {
 // Note that the character values should be treated as
 // being unsigned (in the range 0..255)
 uint32_t wc_hash(const unsigned char *w) {
-  // TODO: implement
+  uint32_t hash_code = 5381;
+
+  while (*w) {
+    hash_code = hash_code * 33 + *w;
+    w++;
+  }
+  return hash_code;
 }
 
 // Compare two strings lexicographically. Return
@@ -69,12 +76,22 @@ uint32_t wc_hash(const unsigned char *w) {
 // of the other, it is considered as "less than". E.g.,
 // "hi" would compare as less than "high".
 int wc_str_compare(const unsigned char *lhs, const unsigned char *rhs) {
-  // TODO: implement
+  while (*lhs && (*lhs == *rhs)) {
+    lhs++;
+    rhs++;
+  }
+  
+  return (int)(*lhs) - (int)(*rhs);
 }
 
 // Copy NUL-terminated source string to the destination buffer.
 void wc_str_copy(unsigned char *dest, const unsigned char *source) {
-  // TODO: implement
+  while(*source) {
+    *dest = *source;
+    dest++;
+    source++;
+  }
+  *dest = '\0';
 }
 
 // Return 1 if the character code in c is a whitespace character,
@@ -116,9 +133,32 @@ int wc_isalpha(unsigned char c) {
 // MAX_WORDLEN characters, then only the first MAX_WORDLEN
 // characters in the sequence should be stored in the array.
 int wc_readnext(FILE *in, unsigned char *w) {
-  // TODO: implement
-}
+    int character;
+    unsigned int wLen = 0;
 
+    // Skip initial whitespace characters
+    while ((character = fgetc(in)) != EOF && wc_isspace((unsigned char)character)) {
+        // EMPTY
+    }
+
+    // Sanity check if end of file
+    if (character == EOF) {
+        return 0;
+    }
+
+    // Found start of the word by this point. Need a do-while to make sure we don't skip first letter
+    do {
+        // If space, add
+        if (wLen < MAX_WORDLEN) {
+            w[wLen] = (unsigned char)character;
+            wLen++;
+        }
+    } while ((character = fgetc(in)) != EOF && !wc_isspace((unsigned char)character));
+
+    w[wLen] = '\0';
+
+    return 1;
+}
 
 
 // Convert the NUL-terminated character string in the array
@@ -166,7 +206,26 @@ void wc_trim_non_alpha(unsigned char *w) {
 // the new node should have its count value set to 0. (It is the caller's
 // job to update the count.)
 struct WordEntry *wc_find_or_insert(struct WordEntry *head, const unsigned char *s, int *inserted) {
-  // TODO: implement
+  struct WordEntry *curr = head; 
+
+  while (curr) {
+    if (wc_str_compare(curr->word, s) == 0) { 
+      // Found word
+      *inserted = 0;
+      return curr;
+    }
+    curr = curr->next;
+  }
+
+  // At this point we did not find the word, so we insert
+  struct WordEntry *newEntry = (struct WordEntry *)malloc(sizeof(struct WordEntry));
+  wc_str_copy(newEntry->word, s);
+  newEntry->count = 0;
+  newEntry->next = head;
+
+  *inserted = 1;
+  return newEntry;
+
 }
 
 // Find or insert the WordEntry object for the given string (s), returning
@@ -177,10 +236,25 @@ struct WordEntry *wc_find_or_insert(struct WordEntry *head, const unsigned char 
 // Returns a pointer to the WordEntry object in the appropriate linked list
 // which represents s.
 struct WordEntry *wc_dict_find_or_insert(struct WordEntry *buckets[], unsigned num_buckets, const unsigned char *s) {
-  // TODO: implement
+  unsigned index = wc_hash(s) % num_buckets;
+  int inserted; 
+  
+  // Find or insert WordEntry
+  struct WordEntry *entry = wc_find_or_insert(buckets[index], s, &inserted);
+
+  // If we inserted a word, update head
+  if (inserted) {
+    entry->next = buckets[index];
+    buckets[index] = entry;
+  }
+  return entry;
 }
 
 // Free all of the nodes in given linked list of WordEntry objects.
 void wc_free_chain(struct WordEntry *p) {
-  // TODO: implement
+  while (p) {
+    struct WordEntry *temp = p;
+    p = p->next;
+    free(temp);
+  }
 }
