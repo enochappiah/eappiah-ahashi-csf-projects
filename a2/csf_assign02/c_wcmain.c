@@ -15,6 +15,9 @@ int main(int argc, char **argv) {
   uint32_t best_word_count = 0;
 
   // TODO: implement
+  char*[] filename = argv[1];
+  FILE *inputFile = fopen
+  while (wc_readnext(FILE *in, unsigned char *w))
   
 
   printf("Total words read: %u\n", (unsigned int) total_words);
