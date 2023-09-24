@@ -134,6 +134,29 @@ wc_str_copy:
 	.globl wc_isspace
 wc_isspace:
 	/* TODO: implement */
+	cmpb $0x20, %dil
+	je .Lwhitespace
+
+	cmpb $0x09, %dil
+	je .Lwhitespace
+
+	cmpb $0x0D, %dil
+	je .Lwhitespace
+
+	cmpb $0x0A, %dil
+	je .Lwhitespace
+
+	cmpb $0x0C, %dil
+	je .Lwhitespace
+
+	cmpb $0x0B, %dil
+	je .Lwhitespace
+
+	mov $0, %eax
+	ret
+
+.Lwhitespace:
+	mov $1, %eax
 	ret
 
 /*
@@ -145,8 +168,24 @@ wc_isspace:
  */
 	.globl wc_isalpha
 wc_isalpha:
-	/* TODO: implement */
-	ret
+    mov %dil, %al
+
+    # Check if c is within 'A' to 'Z'
+    subb $0x41, %dil
+    cmpb $0x5A - 0x41, %dil
+    jbe .Lis_alpha
+
+    # Check if c is within 'a' to 'z'
+    subb $0x61, %al
+    cmpb $0x7A - 0x61, %al
+    jbe .Lis_alpha
+
+    mov $0, %eax
+    ret
+
+.Lis_alpha:
+    mov $1, %eax
+    ret
 
 /*
  * Read the next word from given input stream, storing

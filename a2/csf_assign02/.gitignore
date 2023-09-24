@@ -5,3 +5,4 @@
 /asm_wctests
 /asm_wordcount
 /casm_wordcount
+*.txt
