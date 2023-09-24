@@ -15,10 +15,10 @@ int main(int argc, char **argv) {
   uint32_t best_word_count = 0;
 
   // TODO: implement
-  FILE *file = fopen(argv[1], "r");
+  FILE *file = (argc > 1) ? fopen(argv[1], "r") : stdin;
 
   // Array representing the hash table (each element is like head of linked list)
-  struct WordEntry *buckets[HASHTABLE_SIZE] = {NULL};
+  struct WordEntry *buckets[HASHTABLE_SIZE] = {0};
   unsigned char word[MAX_WORDLEN + 1];
 
   while (wc_readnext(file, word)) {
