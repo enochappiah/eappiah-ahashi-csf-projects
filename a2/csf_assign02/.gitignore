@@ -6,3 +6,4 @@
 /asm_wordcount
 /casm_wordcount
 *.txt
+vgcore.*
