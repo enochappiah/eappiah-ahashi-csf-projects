@@ -239,6 +239,8 @@ void test_find_or_insert(TestObjs *objs) {
   ASSERT(0 == strcmp("ax's", (const char *) p->word));
   ASSERT(1 == p->count);
   ++p->count;
+
+  wc_free_chain(p);
 }
 
 void test_dict_find_or_insert(TestObjs *objs) {
@@ -256,6 +258,7 @@ void test_dict_find_or_insert(TestObjs *objs) {
   ASSERT(dict[4] == NULL);
   ASSERT(p->count == 0);
   ++p->count;
+
 
   p = wc_dict_find_or_insert(dict, 5, (const unsigned char *) "ax's");
   ASSERT(dict[0] == NULL);
@@ -309,6 +312,13 @@ void test_dict_find_or_insert(TestObjs *objs) {
   ASSERT(dict[4] == NULL);
   ASSERT(p->count == 0);
   ++p->count;
+
+  wc_free_chain(dict[0]);
+  wc_free_chain(dict[1]);
+  wc_free_chain(dict[2]);
+  wc_free_chain(dict[3]);
+  wc_free_chain(dict[4]);
+
 }
 
 void test_free_chain(TestObjs *objs) {
