@@ -18,6 +18,7 @@ int main(int argc, char **argv) {
   FILE *file = (argc > 1) ? fopen(argv[1], "r") : stdin;
   if (!file) {
     fprintf(stderr, "Error in opening file\n");
+    return 1;
   }
 
   // Array representing the hash table (each element is like head of linked list)
