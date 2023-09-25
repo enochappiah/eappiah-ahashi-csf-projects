@@ -134,22 +134,22 @@ wc_str_copy:
 	.globl wc_isspace
 wc_isspace:
 	/* TODO: implement */
-	cmpb $0x20, %dil
+	cmpb $0x20, %dil # ' '
 	je .Lwhitespace
 
-	cmpb $0x09, %dil
+	cmpb $0x09, %dil # '\t'
 	je .Lwhitespace
 
-	cmpb $0x0D, %dil
+	cmpb $0x0D, %dil # '\r'
 	je .Lwhitespace
 
-	cmpb $0x0A, %dil
+	cmpb $0x0A, %dil # '\n'
 	je .Lwhitespace
 
-	cmpb $0x0C, %dil
+	cmpb $0x0C, %dil # '\f'
 	je .Lwhitespace
 
-	cmpb $0x0B, %dil
+	cmpb $0x0B, %dil # '\v'
 	je .Lwhitespace
 
 	mov $0, %eax
