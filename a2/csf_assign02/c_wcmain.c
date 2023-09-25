@@ -5,7 +5,6 @@
 // Suggested number of buckets for the hash table
 #define HASHTABLE_SIZE 13249
 
-// TODO: prototypes for helper functions
 
 int main(int argc, char **argv) {
   // stats (to be printed at end)
@@ -14,7 +13,6 @@ int main(int argc, char **argv) {
   const unsigned char *best_word = (const unsigned char *) "";
   uint32_t best_word_count = 0;
 
-  // TODO: implement
   FILE *file = (argc > 1) ? fopen(argv[1], "r") : stdin;
   if (!file) {
     fprintf(stderr, "Error in opening file\n");
@@ -58,16 +56,12 @@ int main(int argc, char **argv) {
   printf("Unique words read: %u\n", (unsigned int) unique_words);
   printf("Most frequent word: %s (%u)\n", (const char *) best_word, best_word_count);
 
-  // TODO: make sure file is closed (if one was opened)
   fclose(file);
 
   for (int i = 0; i < HASHTABLE_SIZE; i++) {
     wc_free_chain(buckets[i]);
   }
 
-  // TODO: make sure memory is freed
-
   return 0;
 }
 
-// TODO: definitions of helper functions

@@ -10,39 +10,6 @@
 #include "wcfuncs.h"
 
 
-size_t provideLength(unsigned char *w ) {
-  size_t length = 0;
-  unsigned char *p = w;
-
-  //move pointer to the end of the string's null terminator
-  while (*p != '\0') {
-    p++;
-    length++;
-  }
-
-  //move pointer once backwards to last char in string
-  p--;
-  length--;
-
-  return length;
-}
-
-//provides pointer to the end of a string
-unsigned char* provideEndPtr(unsigned char *w ) {
-  size_t i = 0;
-  unsigned char *p = w;
-
-  //move pointer to the end of the string's null terminator
-  while(*p != '\0') {
-    p++;
-  }
-  //move pointer once backwards to last char in string
-  p--;
-  
-  return p;
-}
-
-
 // Compute a hash code for the given NUL-terminated
 // character string.
 //
@@ -173,25 +140,6 @@ void wc_tolower(unsigned char *w) {
   }
 }
 
-// //A recursive call for wc_trim_non_alpha function
-// unsigned char * recursiveTrim(unsigned char *p) {
-//   if (wc_isalpha(*p)) {       //Base case: if the char is a letter, func should return because first alphabetic char is found
-//     p++;                        //p is currently at alphabetic char, so addition to move it back to previously non-alphabetic char
-//     *p = '\0';                  //insert null terminator at that position to end the string early
-//     return p;
-//   }
-//   p--;                          //keep iterating toward front of string
-//   return recursiveTrim(p);      //recurive call with updated string array index
-// }
-
-
-
-// // Remove any non-alphaabetic characters from the end of the
-// // NUL-terminated character string pointed-to by w.
-// void wc_trim_non_alpha(unsigned char *w) {
-//   unsigned char *p = provideEndPtr(w); //provides pointer to the end of parameter string
-//   w = recursiveTrim(p); 
-// }
 
 void wc_trim_non_alpha(unsigned char *w) {
   unsigned char *end = w;
@@ -228,6 +176,8 @@ void wc_trim_non_alpha(unsigned char *w) {
 // by inserted to 1, and return a pointer to the new node. Note that
 // the new node should have its count value set to 0. (It is the caller's
 // job to update the count.)
+
+//TODO fixing memory leak
 struct WordEntry *wc_find_or_insert(struct WordEntry *head, const unsigned char *s, int *inserted) {
   struct WordEntry *curr = head; 
 
