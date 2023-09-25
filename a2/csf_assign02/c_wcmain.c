@@ -16,6 +16,9 @@ int main(int argc, char **argv) {
 
   // TODO: implement
   FILE *file = (argc > 1) ? fopen(argv[1], "r") : stdin;
+  if (!file) {
+    fprintf(stderr, "Error in opening file\n");
+  }
 
   // Array representing the hash table (each element is like head of linked list)
   struct WordEntry *buckets[HASHTABLE_SIZE] = {0};

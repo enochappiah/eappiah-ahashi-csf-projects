@@ -173,24 +173,47 @@ void wc_tolower(unsigned char *w) {
   }
 }
 
-//A recursive call for wc_trim_non_alpha function
-unsigned char * recursiveTrim(unsigned char *p) {
-  if (wc_isalpha(*p)) {       //Base case: if the char is a letter, func should return because first alphabetic char is found
-    p++;                        //p is currently at alphabetic char, so addition to move it back to previously non-alphabetic char
-    *p = '\0';                  //insert null terminator at that position to end the string early
-    return p;
-  }
-  p--;                          //keep iterating toward front of string
-  return recursiveTrim(p);      //recurive call with updated string array index
-}
+// //A recursive call for wc_trim_non_alpha function
+// unsigned char * recursiveTrim(unsigned char *p) {
+//   if (wc_isalpha(*p)) {       //Base case: if the char is a letter, func should return because first alphabetic char is found
+//     p++;                        //p is currently at alphabetic char, so addition to move it back to previously non-alphabetic char
+//     *p = '\0';                  //insert null terminator at that position to end the string early
+//     return p;
+//   }
+//   p--;                          //keep iterating toward front of string
+//   return recursiveTrim(p);      //recurive call with updated string array index
+// }
 
 
 
-// Remove any non-alphaabetic characters from the end of the
-// NUL-terminated character string pointed-to by w.
+// // Remove any non-alphaabetic characters from the end of the
+// // NUL-terminated character string pointed-to by w.
+// void wc_trim_non_alpha(unsigned char *w) {
+//   unsigned char *p = provideEndPtr(w); //provides pointer to the end of parameter string
+//   w = recursiveTrim(p); 
+// }
+
 void wc_trim_non_alpha(unsigned char *w) {
-  unsigned char *p = provideEndPtr(w); //provides pointer to the end of parameter string
-  w = recursiveTrim(p); 
+  unsigned char *end = w;
+
+  while (*end) {
+    end++;
+  }
+
+  if (end != w) {
+    end--;
+  }
+
+  while (end != w && !wc_isalpha(*end)) {
+    end--;
+  }
+
+  // If last valid character is not alphabetic set cur position to null terminator
+    if (!wc_isalpha(*end)) {
+        *end = '\0';
+    } else {
+        *(end + 1) = '\0';  // Place null terminator after last valid alphabetic character
+    }
 }
 
 // Search the specified linked list of WordEntry objects for an object
@@ -219,6 +242,9 @@ struct WordEntry *wc_find_or_insert(struct WordEntry *head, const unsigned char 
 
   // At this point we did not find the word, so we insert
   struct WordEntry *newEntry = (struct WordEntry *)malloc(sizeof(struct WordEntry));
+  if (!newEntry) {
+    return NULL;
+  }
   wc_str_copy(newEntry->word, s);
   newEntry->count = 0;
   newEntry->next = head;
