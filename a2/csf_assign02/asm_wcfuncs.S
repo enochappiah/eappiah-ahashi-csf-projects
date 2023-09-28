@@ -38,6 +38,20 @@
 	.globl wc_hash
 wc_hash:
 	/* TODO: implement */
+	movq $5381, %rax
+
+.Lloop_start:
+	movzbl (%rdi), %ecx
+	testb %cl, %cl
+	jz .loop_end
+
+	imulq $33, %rax, %rax
+	addq %rcx, %rax
+
+	inc %rdi
+	jmp .Lloop_start
+
+.loop_end:
 	ret
 
 /*
@@ -218,6 +232,24 @@ wc_readnext:
 	.globl wc_tolower
 wc_tolower:
 	/* TODO: implement */
+	.loop_start:
+		movzbl (%rdi), %eax
+		testb %al, %al
+		jz .Lend_of_string
+
+		cmpb $0x41, %al # compare with 'A'
+		jb .Lis_lower
+		cmpb $0x5A, %al # compare with 'Z'
+		ja .Lis_lower
+
+		addb $0x20, %al # 'a' - 'A' = 61 - 41 = 20
+		movb %al, (%rdi)
+
+.Lis_lower:
+	inc %rdi
+	jmp .loop_start
+
+.Lend_of_string:
 	ret
 
 /*
