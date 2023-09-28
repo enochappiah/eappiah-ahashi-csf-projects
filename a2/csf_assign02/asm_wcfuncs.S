@@ -126,7 +126,24 @@ wc_str_compare:
  */
 	.globl wc_str_copy
 wc_str_copy:
-	/* TODO: implement */
+	
+.Lbody: # loop body that will continue while *source is not at null terminator/not null
+	movzbl (%rsi), %eax # Move first byte of SOURCE argument into 16-bit register
+	
+	test %al, %al # tests if SOURCE byte is a null terminator/end of string
+	jz .Lend # jump to loop body if SOURCE byte is NOT a null terminator/end of string
+	
+	
+	movb %al, (%rdi) # moving SOURCE byte into DEST byte
+
+	inc %rdi # incrementing char pointer to next char in array
+	inc %rsi
+
+	jmp .Lbody
+	
+.Lend:	
+	mov $0x00, %eax # if it is the end of the string, add null terminator to DEST and return
+	ret
 	ret
 
 /*
