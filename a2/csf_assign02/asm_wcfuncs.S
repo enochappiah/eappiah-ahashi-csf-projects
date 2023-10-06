@@ -276,10 +276,52 @@ wc_tolower:
  * C function prototype:
  *    void wc_trim_non_alpha(unsigned char *w);
  */
-	.globl wc_trim_non_alpha
+.globl wc_trim_non_alpha
 wc_trim_non_alpha:
-	/* TODO: implement */
-	ret
+    # Find the end of the string
+.find_end:
+    movzbl (%rdi), %eax  # Load next byte
+    testb %al, %al       # Check for null terminator
+    jz .trimming         # If found, begin trimming
+    incq %rdi            # Move to the next character
+    jmp .find_end
+
+.trimming:
+    decq %rdi            # Move back one character from null terminator
+
+.check_char:
+    # Ensure we're not at the start of the string
+    cmpq %rsi, %rdi
+    je .done             # If we're at the start, we're done
+
+    # Save registers
+    pushq %rsi
+    pushq %rdi
+
+    # Call wc_isalpha to check the character
+    movb (%rdi), %dil  # Load the character into dil
+    call wc_isalpha
+    testl %eax, %eax     # Test the result
+
+    # Restore registers
+    popq %rdi
+    popq %rsi
+
+    # If zero, not a letter
+    jz .not_a_letter
+
+    # If it's a letter, we're done
+    jmp .done
+
+.not_a_letter:
+    # Replace character with null terminator and move to the previous character
+    movb $0, (%rdi)
+    decq %rdi
+    jmp .check_char
+
+.done:
+    ret
+
 
 /*
  * Search the specified linked list of WordEntry objects for an object
