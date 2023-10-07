@@ -495,10 +495,124 @@ wc_find_or_insert:
  * C function prototype:
  *    struct WordEntry *wc_dict_find_or_insert(struct WordEntry *buckets[], unsigned num_buckets, const unsigned char *s);
  */
-    .globl wc_dict_find_or_insert
+.globl wc_dict_find_or_insert
 wc_dict_find_or_insert:
-	/* TODO: implement */
-	ret
+    # Save callee-saved registers.
+    pushq %rbp
+    pushq %rbx
+    pushq %r12
+    pushq %r13
+    pushq %r14
+    pushq %r15      # Added for stack alignment.
+
+    # Reserve 16 bytes of local space.
+    subq $16, %rsp 
+
+    # rdi = struct WordEntry *buckets[]
+    # rsi = unsigned num_buckets
+    # rdx = const unsigned char *s
+
+    # Store the buckets pointer and string pointer
+    movq %rdi, %r14
+    movq %rdx, %r13 # Store the string pointer
+
+    # Verify if rdx (string s) is not NULL
+    testq %r13, %r13
+    je .error_exit
+
+    # Compute hash for s
+    call wc_hash
+
+    # Zero out the higher 32-bits of RAX
+    movl %eax, %eax
+
+    # Zero out RDX for the division operation
+    xorq %rdx, %rdx
+
+    # Load num_buckets into RCX
+    movq %rsi, %rcx
+
+    # Compute the modulus to find the bucket index
+    divq %rcx
+
+    # Move the remainder (our bucket index) into RBX
+    movq %rdx, %rbx
+    # Ensure that bucket index is within the valid range
+    cmpq %rsi, %rbx    # Compare bucket index with num_buckets
+    jae .error_exit    # If not in the range [0, num_buckets - 1], jump to error_exit
+
+    # Access the head of the linked list for the computed bucket index
+    movq (%r14, %rbx, 8), %r12  # Load the head into r12
+
+    # Check if the head is NULL (i.e., no entry yet for this bucket)
+    testq %r12, %r12   # Test r12 against itself
+    je .insert_new_entry  # If NULL, we'll handle inserting a new entry later
+
+    # Call wc_find_or_insert with appropriate arguments
+    # rdi should point to the head, rsi should point to the word string, rdx will point to a local flag to capture insert status
+    movq %r12, %rdi
+    movq %rdx, %rsi    # rdx was holding our string 's'
+    leaq 24(%rsp), %rdx    # Use stack space to store 'inserted' flag for wc_find_or_insert to use
+    call wc_find_or_insert
+
+    # Check return from wc_find_or_insert
+    # If a new entry was inserted, rax will have its address
+    cmpq $1, 24(%rsp)  # Check if the 'inserted' flag was set by wc_find_or_insert
+    je .update_bucket  # If so, we need to update our bucket to point to the new entry
+
+    jmp .error_exit          # If no new entry was inserted, we can exit
+
+.update_bucket:
+    # Code to update the head of the linked list in the bucket will go here...
+    # We'll handle this after ensuring there's no segmentation fault up to this point.
+    # Set new entry's next pointer to old head.
+    movq %r12, WORDENTRY_NEXT_OFFSET(%rax) # %rax has the address of the new entry returned by wc_find_or_insert.
+
+    # Update the bucket to point to the new head.
+    movq %rax, (%r14, %rbx, 8)
+
+    # This marks the end of the function. You can then jump to the exit routine which will handle cleanup.
+    jmp .error_exit
+
+.insert_new_entry:
+    # Allocate memory for a new WordEntry.
+    movl $WORDENTRY_SIZE, %edi
+    call malloc
+    testq %rax, %rax                # Check if malloc failed
+    je .error_exit
+
+    # Save the bucket index in %r15 before we overwrite %rbx
+    movq %rbx, %r15
+
+    # %rax has the address of the newly allocated memory.
+    movq %rax, %rbx                 # Store it in %rbx for ease of use.
+
+    # Copy the string s to newEntry->word.
+    movq %r13, %rsi                # %r13 has the source string.
+    leaq WORDENTRY_WORD_OFFSET(%rbx), %rdi
+    call wc_str_copy
+
+    movb $0, WORDENTRY_WORD_OFFSET+MAX_WORDLEN(%rbx)
+    movl $0, WORDENTRY_COUNT_OFFSET(%rbx)
+    movq %r12, WORDENTRY_NEXT_OFFSET(%rbx)
+    movq %rbx, (%r14, %r15, 8)     # Use %r15 for the bucket index
+    movq %rbx, %rax
+
+    jmp .error_exit
+
+
+.error_exit:
+    addq $16, %rsp   # Clean up local space
+    popq %r15
+    popq %r14
+    popq %r13
+    popq %r12
+    popq %rbx
+    popq %rbp
+    ret
+
+
+
 
 /*
  * Free all of the nodes in given linked list of WordEntry objects.
