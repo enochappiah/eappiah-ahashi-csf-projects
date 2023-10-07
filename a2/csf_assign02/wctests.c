@@ -37,7 +37,11 @@ void test_readnext(TestObjs *objs);
 void test_readnext_1(TestObjs *objs);
 void test_tolower(TestObjs *objs);
 void test_trim_non_alpha(TestObjs *objs);
+void test_trim_non_alpha_1(TestObjs *objs);
+void test_trim_non_alpha_2(TestObjs *objs);
 void test_find_or_insert(TestObjs *objs);
+void test_find_or_insert_1(TestObjs *objs);
+void test_find_or_insert_trim(TestObjs *objs);
 void test_dict_find_or_insert(TestObjs *objs);
 void test_free_chain(TestObjs *objs);
 
@@ -59,7 +63,11 @@ int main(int argc, char **argv) {
   TEST(test_readnext_1);
   TEST(test_tolower);
   TEST(test_trim_non_alpha);
+  TEST(test_trim_non_alpha_1);
+  TEST(test_trim_non_alpha_2);
   TEST(test_find_or_insert);
+  TEST(test_find_or_insert_1);
+  TEST(test_find_or_insert_trim);
   TEST(test_dict_find_or_insert);
   TEST(test_free_chain);
 
@@ -78,7 +86,7 @@ TestObjs *setup(void) {
   objs->test_str_4 = (const unsigned char *) "hello, world";
   objs->test_str_4_upper = (const unsigned char *) "HElLO, WoRlD";
 
-  objs->test_str_6_trim = (const unsigned char *) "testing....!3112323!!";
+  objs->test_str_5_trim = (const unsigned char *) "testing....!3112323!!";
   objs->test_str_6_trim = (const unsigned char *) "t3$t1ng";
 
   objs->test_str_1_copy = (const unsigned char *) "hello";
@@ -137,11 +145,11 @@ void test_str_compare(TestObjs *objs) {
 
   // ADDED TESTS
   ASSERT(wc_str_compare(objs->test_str_4, objs->test_str_4) == 0);
-  ASSERT(wc_str_compare(objs->test_str_2, objs->test_str_4) > 0);
+  ASSERT(wc_str_compare(objs->test_str_2, objs->test_str_4) < 0);
   ASSERT(wc_str_compare(objs->test_str_3, objs->test_str_4) < 0);
-  ASSERT(wc_str_compare(objs->test_str_3, objs->test_str_1) > 0);
-  ASSERT(wc_str_compare(objs->test_str_1, objs->test_str_2) < 0);
-  ASSERT(wc_str_compare(objs->test_str_2, objs->test_str_1) > 0);
+  ASSERT(wc_str_compare(objs->test_str_3, objs->test_str_1) < 0);
+  ASSERT(wc_str_compare(objs->test_str_1, objs->test_str_2) > 0);
+  ASSERT(wc_str_compare(objs->test_str_2, objs->test_str_1) < 0);
   
 }
 
@@ -295,15 +303,22 @@ void test_trim_non_alpha(TestObjs *objs) {
   printf("After trim: %s\n", buf);
   ASSERT(0 == strcmp("O_O", (const char *) buf));
 
+}
 
-  // ADDED TESTS
+// ADDED TESTS
+void test_trim_non_alpha_1(TestObjs *objs) {
+  unsigned char buf[256];
+  
   strcpy((char *) buf, (const char *) objs->test_str_5_trim);
   ASSERT(0 == strcmp("testing....!3112323!!", (const char *) buf));
   printf("Before trim: %s\n", buf);
   wc_trim_non_alpha(buf);
   printf("After trim: %s\n", buf);
   ASSERT(0 == strcmp("testing", (const char *) buf));
+}
 
+void test_trim_non_alpha_2(TestObjs *objs) {
+  unsigned char buf[256];
 
   strcpy((char *) buf, (const char *) objs->test_str_6_trim);
   ASSERT(0 == strcmp("t3$t1ng", (const char *) buf));
@@ -352,8 +367,19 @@ void test_find_or_insert(TestObjs *objs) {
   ASSERT(1 == p->count);
   ++p->count;
 
+  wc_free_chain(p);
+}
 
-  // ADDED TESTS
+// ADDED TESTS
+void test_find_or_insert_1(TestObjs *objs) {
+  (void) objs;
+
+  struct WordEntry *list = NULL;
+  int inserted;
+
+  struct WordEntry *p;
+
+  
   p = wc_find_or_insert(list, (const unsigned char *) "cheese", &inserted);
   ASSERT(1 == inserted);
   list = p;
@@ -370,14 +396,6 @@ void test_find_or_insert(TestObjs *objs) {
   ASSERT(0 == p->count);
   ++p->count;
 
-  p = wc_find_or_insert(list, (const unsigned char *) "wor!d", &inserted);
-  ASSERT(1 == inserted);
-  list = p;
-  ASSERT(p != NULL);
-  ASSERT(0 == strcmp("wor!d", (const char *) p->word));
-  ASSERT(0 == p->count);
-  ++p->count;
-
 
   p = wc_find_or_insert(list, (const unsigned char *) "cheese", &inserted);
   ASSERT(0 == inserted);
@@ -390,12 +408,29 @@ void test_find_or_insert(TestObjs *objs) {
   p = wc_find_or_insert(list, (const unsigned char *) "another", &inserted);
   ASSERT(0 == inserted);
   ASSERT(p != NULL);
-  ASSERT(0 == strcmp("ax's", (const char *) p->word));
+  ASSERT(0 == strcmp("another", (const char *) p->word));
   ASSERT(1 == p->count);
   ++p->count;
   ASSERT(2 == p->count);
 
-  p = wc_find_or_insert(list, (const unsigned char *) "word", &inserted);
+
+  wc_free_chain(p);
+
+}
+
+// ADDED TESTS  
+void test_find_or_insert_trim(TestObjs *objs) {
+  (void) objs;
+
+  struct WordEntry *list = NULL;
+  int inserted;
+
+  struct WordEntry *p;
+
+  unsigned char word[MAX_WORDLEN + 1] = "word!";
+  wc_trim_non_alpha(word);
+
+  p = wc_find_or_insert(list, word, &inserted);
   ASSERT(1 == inserted);
   list = p;
   ASSERT(p != NULL);
@@ -403,10 +438,11 @@ void test_find_or_insert(TestObjs *objs) {
   ASSERT(0 == p->count);
   ++p->count;
 
-  p = wc_find_or_insert(list, (const unsigned char *) "wor!d", &inserted);
+
+  p = wc_find_or_insert(list, word, &inserted);
   ASSERT(0 == inserted);
   ASSERT(p != NULL);
-  ASSERT(0 == strcmp("wor!d", (const char *) p->word));
+  ASSERT(0 == strcmp("word", (const char *) p->word));
   ASSERT(1 == p->count);
   ++p->count;
   ASSERT(2 == p->count);
