@@ -337,7 +337,7 @@ wc_readnext:
  */
 	.globl wc_tolower
 wc_tolower:
-	.Lloop_start:
+	.L_loop:
 		movzbl (%rdi), %eax
 		testb %al, %al
 		jz .Lend_of_string
@@ -352,7 +352,7 @@ wc_tolower:
 
 .Lis_lower:
 	inc %rdi
-	jmp .Lloop_start
+	jmp .L_loop
 
 .Lend_of_string:
 	ret
@@ -420,6 +420,83 @@ wc_trim_non_alpha:
     addq $8, %rsp
     ret
 
+/*
+ * Search the specified linked list of WordEntry objects for an object
+ * containing the specified string.
+ *
+ * If a matching object is found, set the int variable pointed-to by
+ * inserted to 0 and return a pointer to the matching object.
+ *
+ * If a matching object is not found, allocate a new WordEntry object,
+ * set its next pointer to point to what head points to (i.e., so the
+ * new object is at the head of the list), set the variable pointed-to
+ * by inserted to 1, and return a pointer to the new node. Note that
+ * the new node should have its count value set to 0. (It is the caller's
+ * job to update the count.)
+ *
+ * C function prototype:
+ *    struct WordEntry *wc_find_or_insert(struct WordEntry *head, const unsigned char *s, int *inserted);
+ */
+.globl wc_find_or_insert
+wc_find_or_insert:
+subq $8, %rsp                # stack alignment
+    pushq %r12                   # Preserve %r12
+    pushq %r13                   # Preserve %r13
+    pushq %r14                   # Preserve %r14
+    pushq %r15                   # Preserve %r15
+
+    movq %rdi, %r15              # Store the head of linked list in %r15
+    movq %rsi, %r13              # Store the search string pointer in %r13
+    movq %rdx, %r14              # Store the insertion status int pointer in %r14
+    movq %rdi, %r12              # Use %r12 to traverse the linked list
+
+
+    testq %r15, %r15                # Check if the linked list is empty
+    je .LCreateNewWord           # If empty, need to create a new word entry
+
+.LSearchLoop:
+    leaq WORDENTRY_WORD_OFFSET(%r12), %rdi # Point %rdi to word in curr node
+    movq %r13, %rsi              # Set %rsi to point to the string
+    call wc_str_compare          # Compare the strings
+
+    testq %rax, %rax                # Check if identical
+    je .LWordExists              # If identical, jump to the word exists case
+
+    movq WORDENTRY_NEXT_OFFSET(%r12), %r8  # Get next node
+
+    testq %r8, %r8
+    je .LCreateNewWord           # If there's no next node, create a new word entry
+
+    movq WORDENTRY_NEXT_OFFSET(%r12), %r12 # Move to the next node in the list
+    jmp .LSearchLoop             # Continue searching in the next node
+
+.LWordExists:
+    movq $0, (%r14)              # Set insertion flag to 0 b/c word was not inserted
+    movq %r12, %rax              # Return address of the existing word entry
+    jmp .LEnd
+
+.LCreateNewWord:
+    movq $WORDENTRY_SIZE, %rdi   # Get size needed for a new word entry
+    call malloc                  # Allocate space for the new word entry
+    movq %rax, %r12              # Store the address of the new word entry in %r12
+
+    movq %r13, %rsi              # Point %rsi to the search string
+    leaq WORDENTRY_WORD_OFFSET(%r12), %rdi # Point %rdi to where the word will be stored in the new entry
+    call wc_str_copy             # Copy the search string to the new word entry
+
+    movq $0, WORDENTRY_COUNT_OFFSET(%r12)   # Initialize word count to 0
+    movq %r15, WORDENTRY_NEXT_OFFSET(%r12)  # Point the next of new node to the old head
+    movq $1, (%r14)              # Set insertion flag to 1 (word was inserted)
+    movq %r12, %rax              # Return the address of the new word entry
+
+# Take care of the stack (pop and addq)
+.LEnd:
+    popq %r15
+    popq %r14
+    popq %r13
+    popq %r12
+    addq $8, %rsp
+    ret
 
 /*
  * Search the specified linked list of WordEntry objects for an object
@@ -439,6 +516,7 @@ wc_trim_non_alpha:
  *    struct WordEntry *wc_find_or_insert(struct WordEntry *head, const unsigned char *s, int *inserted);
  */
 .globl wc_dict_find_or_insert
+
 wc_dict_find_or_insert:
     
     subq $16 , %rsp             # Allocating space for variables
