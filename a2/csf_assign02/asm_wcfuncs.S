@@ -420,76 +420,55 @@ wc_trim_non_alpha:
  */
 .globl wc_find_or_insert
 wc_find_or_insert:
-    pushq %rbp
-    movq %rsp, %rbp
-    subq $16, %rsp            # Stack alignment
+	subq $8, %rsp # adjust stack pointer
+	pushq %r12 # store value in callee saved register
+	pushq %r13 # store value in callee saved register
+	pushq %r14 # store value in callee saved register
+	pushq %r15 # store value in callee saved register
+	movq %rdi, %r15 # store linked list head pointer in r15
+	movq %rsi, %r13 # store search string pointer in r13
+	movq %rdx, %r14 # store insertion status int pointer in r14
+	movq %rdi, %r12 # store current wordentry pointer in r12
 
-    pushq %rbx
-    pushq %r12
-    pushq %r13
-    pushq %r14
+    cmpq $0, %r15 # check if head is null
+    jz .LwordMissing # no words in chain
 
-    movq %rdi, %r12           # r12 = head
-    movq %rsi, %r13           # r13 = s
-    movq %rdx, %r14           # r14 = inserted flag
+.LsearchLoop:
+    leaq WORDENTRY_WORD_OFFSET(%r12), %rdi # put word pointer into arg1 register
+    movq %r13, %rsi # move search string into second arg register
+    call wc_str_compare # call compare function on current str and search str
+    cmpq $0, %rax # check if words are the same or not
+    jz .LwordFound # if equal, jump to success case
+    movq WORDENTRY_NEXT_OFFSET(%r12), %r8 # load address of wordentry->next into r8
+    cmpq $0, %r8 # check if current wordentry is the end of the chain
+    jz .LwordMissing # if end of chain, jump to fail case
+    movq WORDENTRY_NEXT_OFFSET(%r12), %r12 # move to next word in chain
+    jmp .LsearchLoop # continue loop
 
-.search_loop:
-    testq %r12, %r12
-    je .not_found
+.LwordFound:
+    movq $0, (%r14) # set int at pointer to 0
+    movq %r12, %rax # put address of wordentry in return register
+    jmp .Ldone # jump to end of procedure
 
-    leaq WORDENTRY_WORD_OFFSET(%r12), %rdi           # Point rdi to the word array in WordEntry
-    movq %r13, %rsi
-    call wc_str_compare
-    test %eax, %eax           # Check the return value
-    je .found
+.LwordMissing:
+    movq $WORDENTRY_SIZE, %rdi # move wordentry size into arg1 register
+    call malloc # allocate new wordentry struct
+    movq %rax, %r12 # load new wordentry into r12
+    movq %r13, %rsi # move string into arg2 register
+    leaq WORDENTRY_WORD_OFFSET(%r12), %rdi # put wordentry->word address into  arg1 register
+    call wc_str_copy # copy input string into wordentry->word
+    movq $0, WORDENTRY_COUNT_OFFSET(%r12) # set word count to 0
+    movq %r15, WORDENTRY_NEXT_OFFSET(%r12) # set wordentry->next to head of chain
+    movq $1, (%r14) # set int at pointer to 1
+    movq %r12, %rax # move pointer to new wordentry into return register
 
-    movq WORDENTRY_NEXT_OFFSET(%r12), %rbx    # Store the next node into %rbx
-    testq %rbx, %rbx          # Check if the next node is NULL
-    je .last_node_check       # If yes, go to last node check
-
-    movq %rbx, %r12           # Update r12 to the next node
-    jmp .search_loop
-
-.last_node_check:             # Special case to check the last node
-    test %eax, %eax
-    je .found
-    jmp .not_found
-
-.found:
-    movl $0, (%r14)
-    movq %r12, %rax
-    jmp .cleanup
-
-.not_found:
-    movl $WORDENTRY_SIZE, %edi
-    call malloc
-    testq %rax, %rax                # Check if malloc failed
-    je .malloc_failed
-
-    movq %rax, %rbx                 # rbx points to the newly allocated memory for newEntry
-    movq %r13, %rsi
-    leaq WORDENTRY_WORD_OFFSET(%rbx), %rdi
-    call wc_str_copy                # Copy the string s to newEntry->word
-
-    movb $0, WORDENTRY_WORD_OFFSET+MAX_WORDLEN(%rbx) # Explicitly null-terminate at the end of word
-    movl $0, WORDENTRY_COUNT_OFFSET(%rbx)
-    movq %r12, WORDENTRY_NEXT_OFFSET(%rbx)   # Set newEntry->next to head
-
-    movq %rbx, %rax
-    movl $1, (%r14)
-    jmp .cleanup
-
-.malloc_failed:
-    xorq %rax, %rax
-
-.cleanup:
-    addq $16, %rsp       # Revert stack alignment 
-    popq %r14
-    popq %r13
-    popq %r12
-    popq %rbx
-    popq %rbp
-    ret
+.Ldone:
+    popq %r15 # restore value in callee saved register
+    popq %r14 # restore value in callee saved register
+    popq %r13 # restore value in callee saved register
+    popq %r12 # restore value in callee saved register
+    addq $8, %rsp # restore stack pointer
+	ret
     
 /*
  * Find or insert the WordEntry object for the given string (s), returning
@@ -505,79 +484,66 @@ wc_find_or_insert:
  */
 .globl wc_dict_find_or_insert
 wc_dict_find_or_insert:
-    # Save callee-saved registers.
-    pushq %rbp
-    pushq %rbx
+    subq $16 , %rsp
     pushq %r12
     pushq %r13
     pushq %r14
-    pushq %r15      # Added for stack alignment.
-
-    # Reserve local space for "inserted" flag.
-    subq $16, %rsp 
-
-    # Store the buckets pointer and string pointer.
-    movq %rdi, %r15  # r14 will keep the buckets pointer.
-    movq %rdx, %r13  # r13 will keep the string pointer.
-
-    # Verify if r13 (string s) is not NULL.
-    testq %r13, %r13
-    je .error_exit
-
-    # Compute hash for s.
-    movq %r13, %rdi
+    pushq %r15
+    pushq %rbp
+    pushq %rbx
+    movq %rdi, %r12
+    movl %esi, %r13d
+    movq %rdx, %r14
+    movq %r14, %rdi
     call wc_hash
+    movl %eax, %ebp
 
-    # Ensure %rax is treated as 32-bits
-    movl %eax, %eax
+    movl %ebp, %eax
+    xor %edx, %edx
+    movl %r13d, %ebx
+    idiv %ebx
 
-    # Zero out RDX for the division operation.
-    xorq %rdx, %rdx
+    movl %edx, %ebp
+    xor %r13, %r13
+    movl %edx, %r13d
 
-    # Load num_buckets into RCX.
-    movq %rsi, %rcx
+    movq $0, %rbx
 
-    # Compute the modulus to get the bucket index.
-    divq %rcx
+    imulq $8, %rbp
+    pushq %r12
+    addq %rbp, %r12
+    movq (%r12), %rdi
+    popq %r12
+    movq %r14, %rsi
 
-    # Store the remainder (our bucket index) in RBX.
-    movq %rdx, %rbx
-
-    # Ensure the bucket index is valid.
-    cmpq %rsi, %rbx
-    jae .error_exit    # Out of bounds, jump to error_exit.
-
-    # Get the head of the linked list for the computed bucket index.
-    movq (%r15, %rbx, 8), %r12  # r12 will keep the head.
-
-    # Prepare parameters for wc_find_or_insert
-    leaq 8(%rsp), %rdx  # Address of the "inserted" flag
-    movq %r12, %rdi     # Head of the linked list for the bucket
-    movq %r13, %rsi     # String to be inserted
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $4, %rsp
+    movq %rbp, %rdx
+    movl $0, (%rbp)
     call wc_find_or_insert
+    movq %rax, %r15
+    cmpl $1, (%rbp)
+    je .dict_find_or_insert_inserted
+    addq $4, %rsp
+    popq %rbp
+    jmp .dict_find_or_insert_not_inserted
 
-    # movq (%rsp), %r14
+.dict_find_or_insert_inserted:
+    addq $4, %rsp
+    popq %rbp
+    movq %r15, (%r12, %r13, 8)
 
-    # Check the "inserted" flag.
-    movl 8(%rsp), %ecx
-    testl %ecx, %ecx
-    jz .word_exists
-
-    # Update the bucket's head if a new word entry was inserted.
-    movq %rax, (%r15, %rbx, 8)
-
-.word_exists:
-    # Clean up and exit.
-.error_exit:
-    addq $16, %rsp
+.dict_find_or_insert_not_inserted:
+    movq %r15, %rax
+    popq %rbx
+    popq %rbp
     popq %r15
     popq %r14
     popq %r13
     popq %r12
-    popq %rbx
-    popq %rbp
-    ret
-
+    addq $16 , %rsp
+	ret
 
 
 
