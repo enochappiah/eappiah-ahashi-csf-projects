@@ -38,23 +38,29 @@
  */
 .globl wc_hash
 wc_hash:
-    movl $5381, %eax          # Initialize hash_code with 5381
+    # Initialize hash_code with 5381
+    movl $5381, %eax
 
 .Lloop_start:
-    movzbl (%rdi), %ecx       # Load next byte (character) of string into ECX, zero-extend to 32 bits
-    testl %ecx, %ecx          # Test if loaded byte is NUL (end of string)
-    jz .loop_end              # If it is, jump to end of loop
+    # Load next byte (character) of string into ECX
+    movzbl (%rdi), %ecx
+    # Test if loaded byte is NUL (end of string)
+    testl %ecx, %ecx
+    jz .loop_end
 
-    imull $33, %eax, %eax     # Multiply EAX (hash_code) by 33 
-    addl %ecx, %eax           # Add the byte (character) value to EAX
+    # Multiply EAX (hash_code) by 33 
+    imull $33, %eax, %eax
 
-    inc %rdi                  # Move to next character in string
-    jmp .Lloop_start          # Repeat loop for next character
+    # Add the byte (character) value to EAX
+    addl %ecx, %eax
+
+    # Move to next character in string
+    inc %rdi
+    # Repeat loop for next character
+    jmp .Lloop_start
 
 .loop_end:
-    ret                       # Return with result in EAX
-
-           
+    ret
 
 
 /*
@@ -431,7 +437,7 @@ wc_find_or_insert:
     testq %r12, %r12
     je .not_found
 
-    movq %r12, %rdi           # Point rdi to the word array in WordEntry
+    leaq WORDENTRY_WORD_OFFSET(%r12), %rdi           # Point rdi to the word array in WordEntry
     movq %r13, %rsi
     call wc_str_compare
     test %eax, %eax           # Check the return value
@@ -507,23 +513,23 @@ wc_dict_find_or_insert:
     pushq %r14
     pushq %r15      # Added for stack alignment.
 
-    # Reserve local space.
+    # Reserve local space for "inserted" flag.
     subq $16, %rsp 
 
     # Store the buckets pointer and string pointer.
-    movq %rdi, %r14  # r14 will keep the buckets pointer.
+    movq %rdi, %r15  # r14 will keep the buckets pointer.
     movq %rdx, %r13  # r13 will keep the string pointer.
 
-    # Verify if rdx (string s) is not NULL.
+    # Verify if r13 (string s) is not NULL.
     testq %r13, %r13
     je .error_exit
 
     # Compute hash for s.
+    movq %r13, %rdi
     call wc_hash
 
     # Ensure %rax is treated as 32-bits
     movl %eax, %eax
-
 
     # Zero out RDX for the division operation.
     xorq %rdx, %rdx
@@ -542,64 +548,26 @@ wc_dict_find_or_insert:
     jae .error_exit    # Out of bounds, jump to error_exit.
 
     # Get the head of the linked list for the computed bucket index.
-    movq (%r14, %rbx, 8), %r12  # r12 will keep the head.
+    movq (%r15, %rbx, 8), %r12  # r12 will keep the head.
 
-    # Check if the head is NULL.
-    testq %r12, %r12
-    je .insert_new_entry
+    # Prepare parameters for wc_find_or_insert
+    leaq 8(%rsp), %rdx  # Address of the "inserted" flag
+    movq %r12, %rdi     # Head of the linked list for the bucket
+    movq %r13, %rsi     # String to be inserted
+    call wc_find_or_insert
 
-    # Traverse the linked list to check for word existence.
-.traverse_list:
-    # Load the word from the current entry to rdi (for string comparison).
-    leaq WORDENTRY_WORD_OFFSET(%r12), %rdi
+    # movq (%rsp), %r14
 
-    # Compare the current word with the target word.
-    movq %r13, %rsi  # Source string.
-    call wc_str_compare  # Assuming this function sets flags based on string comparison.
-    
-    je .word_found   # If words are equal.
+    # Check the "inserted" flag.
+    movl 8(%rsp), %ecx
+    testl %ecx, %ecx
+    jz .word_exists
 
-    # If words aren't the same, go to the next entry.
-    movq WORDENTRY_NEXT_OFFSET(%r12), %r12
-    testq %r12, %r12
-    jne .traverse_list  # If next isn't NULL, continue traversal.
+    # Update the bucket's head if a new word entry was inserted.
+    movq %rax, (%r15, %rbx, 8)
 
-    # If traversal completed without finding the word, insert a new entry.
-    jmp .insert_new_entry
-
-.word_found:
-    # Increment the word's count.
-    addl $1, WORDENTRY_COUNT_OFFSET(%r12)
-    movq %r12, %rax
-    jmp .error_exit
-
-.insert_new_entry:
-    # Allocate memory for a new WordEntry.
-    movl $WORDENTRY_SIZE, %edi
-    call malloc
-    testq %rax, %rax
-    je .error_exit
-
-    # %rax contains the address of the newly allocated memory.
-    # Save the new entry's address in %r15.
-    movq %rax, %r15
-
-    # Copy the string to the new entry.
-    movq %r13, %rsi
-    leaq WORDENTRY_WORD_OFFSET(%r15), %rdi
-    call wc_str_copy
-
-    # Initialize other fields of the new entry.
-    movb $0, WORDENTRY_WORD_OFFSET+MAX_WORDLEN(%r15)
-    movl $0, WORDENTRY_COUNT_OFFSET(%r15)
-    movq %r12, WORDENTRY_NEXT_OFFSET(%r15)  # Set the previous head as next.
-
-    # Update the bucket to point to the new entry.
-    movq %r15, (%r14, %rbx, 8)
-    movq %r15, %rax
-
-    jmp .error_exit
-
+.word_exists:
+    # Clean up and exit.
 .error_exit:
     addq $16, %rsp
     popq %r15
@@ -609,7 +577,6 @@ wc_dict_find_or_insert:
     popq %rbx
     popq %rbp
     ret
-
 
 
 
