@@ -36,24 +36,26 @@
  * C function prototype:
  *    uint32_t wc_hash(const unsigned char *w);
  */
-	.globl wc_hash
+.globl wc_hash
 wc_hash:
-	/* TODO: implement */
-	movq $5381, %rax
+    movl $5381, %eax          # Initialize hash_code with 5381
 
 .Lloop_start:
-	movzbl (%rdi), %ecx
-	testb %cl, %cl
-	jz .loop_end
+    movzbl (%rdi), %ecx       # Load next byte (character) of string into ECX, zero-extend to 32 bits
+    testl %ecx, %ecx          # Test if loaded byte is NUL (end of string)
+    jz .loop_end              # If it is, jump to end of loop
 
-	imulq $33, %rax, %rax
-	addq %rcx, %rax
+    imull $33, %eax, %eax     # Multiply EAX (hash_code) by 33 
+    addl %ecx, %eax           # Add the byte (character) value to EAX
 
-	inc %rdi
-	jmp .Lloop_start
+    inc %rdi                  # Move to next character in string
+    jmp .Lloop_start          # Repeat loop for next character
 
 .loop_end:
-	ret
+    ret                       # Return with result in EAX
+
+           
+
 
 /*
  * Compare two strings lexicographically. Return
@@ -505,104 +507,101 @@ wc_dict_find_or_insert:
     pushq %r14
     pushq %r15      # Added for stack alignment.
 
-    # Reserve 16 bytes of local space.
+    # Reserve local space.
     subq $16, %rsp 
 
-    # rdi = struct WordEntry *buckets[]
-    # rsi = unsigned num_buckets
-    # rdx = const unsigned char *s
+    # Store the buckets pointer and string pointer.
+    movq %rdi, %r14  # r14 will keep the buckets pointer.
+    movq %rdx, %r13  # r13 will keep the string pointer.
 
-    # Store the buckets pointer and string pointer
-    movq %rdi, %r14
-    movq %rdx, %r13 # Store the string pointer
-
-    # Verify if rdx (string s) is not NULL
+    # Verify if rdx (string s) is not NULL.
     testq %r13, %r13
     je .error_exit
 
-    # Compute hash for s
+    # Compute hash for s.
     call wc_hash
 
-    # Zero out the higher 32-bits of RAX
+    # Ensure %rax is treated as 32-bits
     movl %eax, %eax
 
-    # Zero out RDX for the division operation
+
+    # Zero out RDX for the division operation.
     xorq %rdx, %rdx
 
-    # Load num_buckets into RCX
+    # Load num_buckets into RCX.
     movq %rsi, %rcx
 
-    # Compute the modulus to find the bucket index
+    # Compute the modulus to get the bucket index.
     divq %rcx
 
-    # Move the remainder (our bucket index) into RBX
+    # Store the remainder (our bucket index) in RBX.
     movq %rdx, %rbx
-    # Ensure that bucket index is within the valid range
-    cmpq %rsi, %rbx    # Compare bucket index with num_buckets
-    jae .error_exit    # If not in the range [0, num_buckets - 1], jump to error_exit
 
-    # Access the head of the linked list for the computed bucket index
-    movq (%r14, %rbx, 8), %r12  # Load the head into r12
+    # Ensure the bucket index is valid.
+    cmpq %rsi, %rbx
+    jae .error_exit    # Out of bounds, jump to error_exit.
 
-    # Check if the head is NULL (i.e., no entry yet for this bucket)
-    testq %r12, %r12   # Test r12 against itself
-    je .insert_new_entry  # If NULL, we'll handle inserting a new entry later
+    # Get the head of the linked list for the computed bucket index.
+    movq (%r14, %rbx, 8), %r12  # r12 will keep the head.
 
-    # Call wc_find_or_insert with appropriate arguments
-    # rdi should point to the head, rsi should point to the word string, rdx will point to a local flag to capture insert status
-    movq %r12, %rdi
-    movq %rdx, %rsi    # rdx was holding our string 's'
-    leaq 24(%rsp), %rdx    # Use stack space to store 'inserted' flag for wc_find_or_insert to use
-    call wc_find_or_insert
+    # Check if the head is NULL.
+    testq %r12, %r12
+    je .insert_new_entry
 
-    # Check return from wc_find_or_insert
-    # If a new entry was inserted, rax will have its address
-    cmpq $1, 24(%rsp)  # Check if the 'inserted' flag was set by wc_find_or_insert
-    je .update_bucket  # If so, we need to update our bucket to point to the new entry
+    # Traverse the linked list to check for word existence.
+.traverse_list:
+    # Load the word from the current entry to rdi (for string comparison).
+    leaq WORDENTRY_WORD_OFFSET(%r12), %rdi
 
-    jmp .error_exit          # If no new entry was inserted, we can exit
+    # Compare the current word with the target word.
+    movq %r13, %rsi  # Source string.
+    call wc_str_compare  # Assuming this function sets flags based on string comparison.
+    
+    je .word_found   # If words are equal.
 
-.update_bucket:
-    # Code to update the head of the linked list in the bucket will go here...
-    # We'll handle this after ensuring there's no segmentation fault up to this point.
-    # Set new entry's next pointer to old head.
-    movq %r12, WORDENTRY_NEXT_OFFSET(%rax) # %rax has the address of the new entry returned by wc_find_or_insert.
+    # If words aren't the same, go to the next entry.
+    movq WORDENTRY_NEXT_OFFSET(%r12), %r12
+    testq %r12, %r12
+    jne .traverse_list  # If next isn't NULL, continue traversal.
 
-    # Update the bucket to point to the new head.
-    movq %rax, (%r14, %rbx, 8)
+    # If traversal completed without finding the word, insert a new entry.
+    jmp .insert_new_entry
 
-    # This marks the end of the function. You can then jump to the exit routine which will handle cleanup.
+.word_found:
+    # Increment the word's count.
+    addl $1, WORDENTRY_COUNT_OFFSET(%r12)
+    movq %r12, %rax
     jmp .error_exit
 
 .insert_new_entry:
     # Allocate memory for a new WordEntry.
     movl $WORDENTRY_SIZE, %edi
     call malloc
-    testq %rax, %rax                # Check if malloc failed
+    testq %rax, %rax
     je .error_exit
 
-    # Save the bucket index in %r15 before we overwrite %rbx
-    movq %rbx, %r15
+    # %rax contains the address of the newly allocated memory.
+    # Save the new entry's address in %r15.
+    movq %rax, %r15
 
-    # %rax has the address of the newly allocated memory.
-    movq %rax, %rbx                 # Store it in %rbx for ease of use.
-
-    # Copy the string s to newEntry->word.
-    movq %r13, %rsi                # %r13 has the source string.
-    leaq WORDENTRY_WORD_OFFSET(%rbx), %rdi
+    # Copy the string to the new entry.
+    movq %r13, %rsi
+    leaq WORDENTRY_WORD_OFFSET(%r15), %rdi
     call wc_str_copy
 
-    movb $0, WORDENTRY_WORD_OFFSET+MAX_WORDLEN(%rbx)
-    movl $0, WORDENTRY_COUNT_OFFSET(%rbx)
-    movq %r12, WORDENTRY_NEXT_OFFSET(%rbx)
-    movq %rbx, (%r14, %r15, 8)     # Use %r15 for the bucket index
-    movq %rbx, %rax
+    # Initialize other fields of the new entry.
+    movb $0, WORDENTRY_WORD_OFFSET+MAX_WORDLEN(%r15)
+    movl $0, WORDENTRY_COUNT_OFFSET(%r15)
+    movq %r12, WORDENTRY_NEXT_OFFSET(%r15)  # Set the previous head as next.
+
+    # Update the bucket to point to the new entry.
+    movq %r15, (%r14, %rbx, 8)
+    movq %r15, %rax
 
     jmp .error_exit
 
-
 .error_exit:
-    addq $16, %rsp   # Clean up local space
+    addq $16, %rsp
     popq %r15
     popq %r14
     popq %r13
@@ -610,6 +609,8 @@ wc_dict_find_or_insert:
     popq %rbx
     popq %rbp
     ret
+
+
 
 
 
