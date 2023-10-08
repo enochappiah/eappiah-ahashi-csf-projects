@@ -242,80 +242,91 @@ wc_isalpha:
  * C function prototype:
  *    int wc_readnext(FILE *in, unsigned char *w);
  */
-	.globl wc_readnext
+.globl wc_readnext
 wc_readnext:
-	/* TODO: implement */
-    pushq %rbp
-    pushq %r12
-    pushq %r13
-    pushq %r14
-    pushq %r15
-    movq %rdi, %r12 # file pointer
-    movq %rsi, %r13 # word
-    movq $0, %r14 # return value
-    movq $0, %rbp
-    cmpq $0, %r12
-    jle .LReadEnd
+    # Preserve the callee-saved registers to the stack
+    pushq %rbp        # Save old frame pointer
+    pushq %r12        # Save %r12
+    pushq %r13        # Save %r13
+    pushq %r14        # Save %r14
+    pushq %r15        # Save %r15
 
-    # Loop Through Beginning Whitespace
-.LReadSkipBegin:
+    subq $8, %rsp
+
+    movq %rdi, %r12   # Store file pointer in %r12
+    movq %rsi, %r13   # Store pointer to the word buffer in %r13
+
+    movq $0, %r14     # Initialize return value (success flag) to 0
+    movq $0, %rbp     # Initialize character counter to 0
+
+    # Check if file pointer is valid
+    testq %r12, %r12
+    jle .LEndOfReading # If not jump to function exit
+
+    # Start skipping any leading whitespace characters
+.LSkipLeadingWhitespaces:
     movq %r12, %rdi
-    call fgetc 
-    movq %rax, %r15
+    call fgetc         # Read the next character from the file
+    movq %rax, %r15   # Store the read character in %r15
 
-    /check char is EOF
-    cmpq $0, %r15
-    jle .LReadEnd
+    # Check if the character is EOF or out of ASCII bounds
+    testq %r15, %r15
+    js .LEndOfReading
     cmpq $127, %r15
-    jg .LReadEnd
+    jg .LEndOfReading
 
-    # check rax is a space
+    # Determine if the character is a whitespace
     movq %r15, %rdi
     call wc_isspace
     cmpq $0, %rax
-    je .LReadWordBegin
-    jmp .LReadSkipBegin
+    je .LStartReadingWord # If not whitespace, begin reading word
+    jmp .LSkipLeadingWhitespaces
 
-    # Loop Until Whitespace
-.LReadWordBegin:
-    # %r15 is character
-    # %rbp is counter 
-    movq $1, %r14
-.LReadWordLoopBegin:
-    # storing the character 
-    movq %r15, (%r13, %rbp)
-    incq %rbp
+# Start reading the word from the file
+.LStartReadingWord:
+    movq $1, %r14     # Set the success flag since we started reading a word
+
+.LWordLoop:
+    movq %r15, (%r13, %rbp) # Store the character in the word buffer
+    incq %rbp # Move to the next position in the buffer
+
+    # Check if exceeding maximum word len
     movq $1, %r8
     addq $MAX_WORDLEN, %r8
     cmpq %rbp, %r8
-    je .LReadEnd
+    je .LEndOfReading  # If exceeded, jump to function exit
 
+    # Read the next character
     movq %r12, %rdi
     call fgetc
     movq %rax, %r15
-    cmpq $0, %r15
-    jle .LReadEnd
-    cmpq $127, %r15
-    jg .LReadEnd
 
+    # Check if character is EOF or out of ASCII bounds
+    cmpq $0, %r15
+    jle .LEndOfReading
+    cmpq $127, %r15
+    jg .LEndOfReading
+
+    # Determine if character is a whitespace (signaling end of the word)
     movq %r15, %rdi
     call wc_isspace
     cmpq $1, %rax
-    je .LReadEnd
-    jmp .LReadWordLoopBegin
+    je .LEndOfReading
+    jmp .LWordLoop
 
-    .LReadEnd:
-    movq $0, (%r13, %rbp)
-    movq %r12, %rdi
-    movq %r13, %rsi
-    movq %r14, %rax
+.LEndOfReading:
+    movq $0, (%r13, %rbp) # Null-terminate the word in the buffer
+    movq %r14, %rax # Store return value to %rax (success flag)
 
+    # Restore original values of the callee-saved registers from the stack
+    addq $8, %rsp
     popq %r15
     popq %r14
     popq %r13
     popq %r12
     popq %rbp
     ret
+
 
 /*
  * Convert the NUL-terminated character string in the array
@@ -326,7 +337,6 @@ wc_readnext:
  */
 	.globl wc_tolower
 wc_tolower:
-	/* TODO: implement */
 	.loop_start:
 		movzbl (%rdi), %eax
 		testb %al, %al
@@ -357,6 +367,14 @@ wc_tolower:
 .globl wc_trim_non_alpha
 wc_trim_non_alpha:
     # Find the end of the string
+    subq $8, %rsp        # Adjust stack for alignment
+
+    # Save %rsi since we'll use it, and it's a callee-saved register
+    pushq %rsi
+
+    # Make %rsi point to the start of the string, useful for ensuring we don't go beyond it
+    movq %rdi, %rsi
+
 .find_end:
     movzbl (%rdi), %eax  # Load next byte
     testb %al, %al       # Check for null terminator
@@ -398,6 +416,8 @@ wc_trim_non_alpha:
     jmp .check_char
 
 .done:
+    popq %rsi
+    addq $8, %rsp
     ret
 
 
@@ -420,55 +440,64 @@ wc_trim_non_alpha:
  */
 .globl wc_find_or_insert
 wc_find_or_insert:
-	subq $8, %rsp # adjust stack pointer
-	pushq %r12 # store value in callee saved register
-	pushq %r13 # store value in callee saved register
-	pushq %r14 # store value in callee saved register
-	pushq %r15 # store value in callee saved register
-	movq %rdi, %r15 # store linked list head pointer in r15
-	movq %rsi, %r13 # store search string pointer in r13
-	movq %rdx, %r14 # store insertion status int pointer in r14
-	movq %rdi, %r12 # store current wordentry pointer in r12
+    subq $8, %rsp                # stack alignment
+    pushq %r12                   # Preserve %r12
+    pushq %r13                   # Preserve %r13
+    pushq %r14                   # Preserve %r14
+    pushq %r15                   # Preserve %r15
 
-    cmpq $0, %r15 # check if head is null
-    jz .LwordMissing # no words in chain
+    movq %rdi, %r15              # Store the head of linked list in %r15
+    movq %rsi, %r13              # Store the search string pointer in %r13
+    movq %rdx, %r14              # Store the insertion status int pointer in %r14
+    movq %rdi, %r12              # Use %r12 to traverse the linked list
 
-.LsearchLoop:
-    leaq WORDENTRY_WORD_OFFSET(%r12), %rdi # put word pointer into arg1 register
-    movq %r13, %rsi # move search string into second arg register
-    call wc_str_compare # call compare function on current str and search str
-    cmpq $0, %rax # check if words are the same or not
-    jz .LwordFound # if equal, jump to success case
-    movq WORDENTRY_NEXT_OFFSET(%r12), %r8 # load address of wordentry->next into r8
-    cmpq $0, %r8 # check if current wordentry is the end of the chain
-    jz .LwordMissing # if end of chain, jump to fail case
-    movq WORDENTRY_NEXT_OFFSET(%r12), %r12 # move to next word in chain
-    jmp .LsearchLoop # continue loop
+    
+    testq %r15, %r15                # Check if the linked list is empty
+    je .LCreateNewWord           # If empty, need to create a new word entry
 
-.LwordFound:
-    movq $0, (%r14) # set int at pointer to 0
-    movq %r12, %rax # put address of wordentry in return register
-    jmp .Ldone # jump to end of procedure
+.LSearchLoop:
+    leaq WORDENTRY_WORD_OFFSET(%r12), %rdi # Point %rdi to word in curr node
+    movq %r13, %rsi              # Set %rsi to point to the string
+    call wc_str_compare          # Compare the strings
 
-.LwordMissing:
-    movq $WORDENTRY_SIZE, %rdi # move wordentry size into arg1 register
-    call malloc # allocate new wordentry struct
-    movq %rax, %r12 # load new wordentry into r12
-    movq %r13, %rsi # move string into arg2 register
-    leaq WORDENTRY_WORD_OFFSET(%r12), %rdi # put wordentry->word address into  arg1 register
-    call wc_str_copy # copy input string into wordentry->word
-    movq $0, WORDENTRY_COUNT_OFFSET(%r12) # set word count to 0
-    movq %r15, WORDENTRY_NEXT_OFFSET(%r12) # set wordentry->next to head of chain
-    movq $1, (%r14) # set int at pointer to 1
-    movq %r12, %rax # move pointer to new wordentry into return register
+    testq %rax, %rax                # Check if identical
+    je .LWordExists              # If identical, jump to the word exists case
 
-.Ldone:
-    popq %r15 # restore value in callee saved register
-    popq %r14 # restore value in callee saved register
-    popq %r13 # restore value in callee saved register
-    popq %r12 # restore value in callee saved register
-    addq $8, %rsp # restore stack pointer
-	ret
+    movq WORDENTRY_NEXT_OFFSET(%r12), %r8  # Get next node
+
+    testq %r8, %r8
+    je .LCreateNewWord           # If there's no next node, create a new word entry
+
+    movq WORDENTRY_NEXT_OFFSET(%r12), %r12 # Move to the next node in the list
+    jmp .LSearchLoop             # Continue searching in the next node
+
+.LWordExists:
+    movq $0, (%r14)              # Set insertion flag to 0 b/c word was not inserted
+    movq %r12, %rax              # Return address of the existing word entry
+    jmp .LEnd
+
+.LCreateNewWord:
+    movq $WORDENTRY_SIZE, %rdi   # Get size needed for a new word entry
+    call malloc                  # Allocate space for the new word entry
+    movq %rax, %r12              # Store the address of the new word entry in %r12
+
+    movq %r13, %rsi              # Point %rsi to the search string
+    leaq WORDENTRY_WORD_OFFSET(%r12), %rdi # Point %rdi to where the word will be stored in the new entry
+    call wc_str_copy             # Copy the search string to the new word entry
+
+    movq $0, WORDENTRY_COUNT_OFFSET(%r12)   # Initialize word count to 0
+    movq %r15, WORDENTRY_NEXT_OFFSET(%r12)  # Point the next of new node to the old head
+    movq $1, (%r14)              # Set insertion flag to 1 (word was inserted)
+    movq %r12, %rax              # Return the address of the new word entry
+
+# Take care of the stack (pop and addq)
+.LEnd:
+    popq %r15
+    popq %r14
+    popq %r13
+    popq %r12
+    addq $8, %rsp
+    ret
     
 /*
  * Find or insert the WordEntry object for the given string (s), returning
