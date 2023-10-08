@@ -554,9 +554,22 @@ wc_dict_find_or_insert:
  * C function prototype:
  *    void wc_free_chain(struct WordEntry *p);
  */
-	.globl wc_free_chain
+.globl wc_free_chain
 wc_free_chain:
-	/* TODO: implement */
+    pushq %r12
+    pushq %r13
+    movq %rdi, %r12
+.L_free_chain:
+    cmpq $0, %r12
+    je .L_free_chain_loop_done
+    movq %r12, %rdi
+    movq WORDENTRY_NEXT_OFFSET(%r12), %r13
+    call free
+    movq %r13, %r12
+    jmp .L_free_chain
+.L_free_chain_loop_done:
+    popq %r13
+    popq %r12
 	ret
 
 /*
