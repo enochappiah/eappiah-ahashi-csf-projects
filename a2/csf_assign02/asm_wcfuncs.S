@@ -46,7 +46,7 @@ wc_hash:
     movzbl (%rdi), %ecx
     # Test if loaded byte is NUL (end of string)
     testl %ecx, %ecx
-    jz .loop_end
+    jz .Lloop_end
 
     # Multiply EAX (hash_code) by 33 
     imull $33, %eax, %eax
@@ -59,7 +59,7 @@ wc_hash:
     # Repeat loop for next character
     jmp .Lloop_start
 
-.loop_end:
+.Lloop_end:
     ret
 
 
@@ -337,7 +337,7 @@ wc_readnext:
  */
 	.globl wc_tolower
 wc_tolower:
-	.loop_start:
+	.Lloop_start:
 		movzbl (%rdi), %eax
 		testb %al, %al
 		jz .Lend_of_string
@@ -352,7 +352,7 @@ wc_tolower:
 
 .Lis_lower:
 	inc %rdi
-	jmp .loop_start
+	jmp .Lloop_start
 
 .Lend_of_string:
 	ret
@@ -375,20 +375,20 @@ wc_trim_non_alpha:
     # Make %rsi point to the start of the string, useful for ensuring we don't go beyond it
     movq %rdi, %rsi
 
-.find_end:
+.Lfind_end:
     movzbl (%rdi), %eax  # Load next byte
     testb %al, %al       # Check for null terminator
-    jz .trimming         # If found, begin trimming
+    jz .Ltrimming         # If found, begin trimming
     incq %rdi            # Move to the next character
-    jmp .find_end
+    jmp .Lfind_end
 
-.trimming:
+.Ltrimming:
     decq %rdi            # Move back one character from null terminator
 
-.check_char:
+.Lcheck_char:
     # Ensure we're not at the start of the string
     cmpq %rsi, %rdi
-    je .done             # If we're at the start, we're done
+    je .Ldone             # If we're at the start, we're done
 
     # Save registers
     pushq %rsi
@@ -404,18 +404,18 @@ wc_trim_non_alpha:
     popq %rsi
 
     # If zero, not a letter
-    jz .not_a_letter
+    jz .Lnot_a_letter
 
     # If it's a letter, we're done
-    jmp .done
+    jmp .Ldone
 
-.not_a_letter:
+.Lnot_a_letter:
     # Replace character with null terminator and move to the previous character
     movb $0, (%rdi)
     decq %rdi
-    jmp .check_char
+    jmp .Lcheck_char
 
-.done:
+.Ldone:
     popq %rsi
     addq $8, %rsp
     ret
@@ -438,143 +438,75 @@ wc_trim_non_alpha:
  * C function prototype:
  *    struct WordEntry *wc_find_or_insert(struct WordEntry *head, const unsigned char *s, int *inserted);
  */
-.globl wc_find_or_insert
-wc_find_or_insert:
-    subq $8, %rsp                # stack alignment
-    pushq %r12                   # Preserve %r12
-    pushq %r13                   # Preserve %r13
-    pushq %r14                   # Preserve %r14
-    pushq %r15                   # Preserve %r15
-
-    movq %rdi, %r15              # Store the head of linked list in %r15
-    movq %rsi, %r13              # Store the search string pointer in %r13
-    movq %rdx, %r14              # Store the insertion status int pointer in %r14
-    movq %rdi, %r12              # Use %r12 to traverse the linked list
-
-    
-    testq %r15, %r15                # Check if the linked list is empty
-    je .LCreateNewWord           # If empty, need to create a new word entry
-
-.LSearchLoop:
-    leaq WORDENTRY_WORD_OFFSET(%r12), %rdi # Point %rdi to word in curr node
-    movq %r13, %rsi              # Set %rsi to point to the string
-    call wc_str_compare          # Compare the strings
-
-    testq %rax, %rax                # Check if identical
-    je .LWordExists              # If identical, jump to the word exists case
-
-    movq WORDENTRY_NEXT_OFFSET(%r12), %r8  # Get next node
-
-    testq %r8, %r8
-    je .LCreateNewWord           # If there's no next node, create a new word entry
-
-    movq WORDENTRY_NEXT_OFFSET(%r12), %r12 # Move to the next node in the list
-    jmp .LSearchLoop             # Continue searching in the next node
-
-.LWordExists:
-    movq $0, (%r14)              # Set insertion flag to 0 b/c word was not inserted
-    movq %r12, %rax              # Return address of the existing word entry
-    jmp .LEnd
-
-.LCreateNewWord:
-    movq $WORDENTRY_SIZE, %rdi   # Get size needed for a new word entry
-    call malloc                  # Allocate space for the new word entry
-    movq %rax, %r12              # Store the address of the new word entry in %r12
-
-    movq %r13, %rsi              # Point %rsi to the search string
-    leaq WORDENTRY_WORD_OFFSET(%r12), %rdi # Point %rdi to where the word will be stored in the new entry
-    call wc_str_copy             # Copy the search string to the new word entry
-
-    movq $0, WORDENTRY_COUNT_OFFSET(%r12)   # Initialize word count to 0
-    movq %r15, WORDENTRY_NEXT_OFFSET(%r12)  # Point the next of new node to the old head
-    movq $1, (%r14)              # Set insertion flag to 1 (word was inserted)
-    movq %r12, %rax              # Return the address of the new word entry
-
-# Take care of the stack (pop and addq)
-.LEnd:
-    popq %r15
-    popq %r14
-    popq %r13
-    popq %r12
-    addq $8, %rsp
-    ret
-    
-/*
- * Find or insert the WordEntry object for the given string (s), returning
- * a pointer to it. The head of the linked list which contains (or should
- * contain) the entry for s is the element of buckets whose index is the
- * hash code of s mod num_buckets.
- *
- * Returns a pointer to the WordEntry object in the appropriate linked list
- * which represents s.
- *
- * C function prototype:
- *    struct WordEntry *wc_dict_find_or_insert(struct WordEntry *buckets[], unsigned num_buckets, const unsigned char *s);
- */
 .globl wc_dict_find_or_insert
 wc_dict_find_or_insert:
-    subq $16 , %rsp
-    pushq %r12
+    
+    subq $16 , %rsp             # Allocating space for variables
+    pushq %r12 
     pushq %r13
     pushq %r14
     pushq %r15
     pushq %rbp
-    pushq %rbx
-    movq %rdi, %r12
-    movl %esi, %r13d
-    movq %rdx, %r14
-    movq %r14, %rdi
-    call wc_hash
-    movl %eax, %ebp
+    pushq %rbx                  # Save registers
+    
+    
+    movq %rdi, %r12             # store buckets pointer argument in register
+    movl %esi, %r13d            # store num_buckets argument in register
+    movq %rdx, %r14             # store string pointer argument in register
+    
+    
+    movq %r14, %rdi             # load string pointer argument in rdi for hash function
+    call wc_hash                           
+    xor %edx, %edx              # clear argument register       
+    
+    movl %r13d, %ebx            # Copy num_buckets argument to register
+    idiv %ebx                   # perform modulo division
+    movl %edx, %ebp                     
+    xor %r13, %r13              # clear argument register 
+    movl %edx, %r13d            # move remainder to register
+    imulq $8, %rbp              # find bucket offset
+    
+    
+    pushq %r12                  # save register
+    
+    addq %rbp, %r12             # find bucket[index]
+    movq (%r12), %rdi           # load bucket[index] into rdi for wc_find_or_insert func
+    popq %r12                   # restore register
+    movq %r14, %rsi             # load string argument into rsi for wc_find_or_insert func
 
-    movl %ebp, %eax
-    xor %edx, %edx
-    movl %r13d, %ebx
-    idiv %ebx
-
-    movl %edx, %ebp
-    xor %r13, %r13
-    movl %edx, %r13d
-
-    movq $0, %rbx
-
-    imulq $8, %rbp
-    pushq %r12
-    addq %rbp, %r12
-    movq (%r12), %rdi
-    popq %r12
-    movq %r14, %rsi
-
-    pushq %rbp
-    movq %rsp, %rbp
-    subq $4, %rsp
-    movq %rbp, %rdx
-    movl $0, (%rbp)
+    pushq %rbp                  # save register
+    movq %rsp, %rbp             # align stack 
+    subq $4, %rsp               # allocate space for inserted argument
+    movl $0, (%rbp)             # initalize inserted argument
+    movq %rbp, %rdx             # load stack frame address argument for wc_find_or_insert func
+    
     call wc_find_or_insert
-    movq %rax, %r15
-    cmpl $1, (%rbp)
-    je .dict_find_or_insert_inserted
-    addq $4, %rsp
-    popq %rbp
-    jmp .dict_find_or_insert_not_inserted
+    movq %rax, %r15             # move returned NewEntry object to register
+    cmpl $1, (%rbp)             # if inserted is 1, insert object to bucket[index]
+    je .Linserted  
 
-.dict_find_or_insert_inserted:
-    addq $4, %rsp
-    popq %rbp
-    movq %r15, (%r12, %r13, 8)
+    addq $4, %rsp               # Realign stack pointer
+    popq %rbp                   # Restore register
+    jmp .Lnot_inserted
 
-.dict_find_or_insert_not_inserted:
-    movq %r15, %rax
-    popq %rbx
+.Linserted:
+    addq $4, %rsp               # Realign stack pointer
+    popq %rbp                   # Restore register
+    movq %r15, (%r12, %r13, 8)  # Update head of buckets[]
+
+.Lnot_inserted:
+    movq %r15, %rax             #  Move entry to return register
+
+
+    popq %rbx                   # Restore registers
     popq %rbp
     popq %r15
     popq %r14
     popq %r13
     popq %r12
-    addq $16 , %rsp
-	ret
+    addq $16 , %rsp             # Realign stack pointer
 
-
+    ret
 
 
 /*
@@ -585,21 +517,32 @@ wc_dict_find_or_insert:
  */
 .globl wc_free_chain
 wc_free_chain:
-    pushq %r12
+
+    pushq %r12              # Save registers
     pushq %r13
-    movq %rdi, %r12
-.L_free_chain:
-    cmpq $0, %r12
-    je .L_free_chain_loop_done
-    movq %r12, %rdi
-    movq WORDENTRY_NEXT_OFFSET(%r12), %r13
+    
+    movq %rdi, %r12         # move argument register 
+
+.Lfree:
+
+    cmpq $0, %r12           # check if pointer is not at end
+    je .Lfree_done
+    
+    movq %r12, %rdi         # load pointer to argument register for free func
+    movq WORDENTRY_NEXT_OFFSET(%r12), %r13      # find pointer-> next
     call free
-    movq %r13, %r12
-    jmp .L_free_chain
-.L_free_chain_loop_done:
-    popq %r13
+
+    movq %r13, %r12         # move to next iteration with new node pointer
+    jmp .Lfree
+
+
+.Lfree_done:
+
+    popq %r13               # Restore registers
     popq %r12
-	ret
+
+    ret
+
 
 /*
 vim:ft=gas:
