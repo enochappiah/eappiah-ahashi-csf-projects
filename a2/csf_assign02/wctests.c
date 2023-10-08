@@ -43,6 +43,7 @@ void test_find_or_insert(TestObjs *objs);
 void test_find_or_insert_1(TestObjs *objs);
 void test_find_or_insert_trim(TestObjs *objs);
 void test_dict_find_or_insert(TestObjs *objs);
+void test_dict_find_or_insert_1(TestObjs *objs);
 void test_free_chain(TestObjs *objs);
 
 int main(int argc, char **argv) {
@@ -69,6 +70,7 @@ int main(int argc, char **argv) {
   TEST(test_find_or_insert_1);
   TEST(test_find_or_insert_trim);
   TEST(test_dict_find_or_insert);
+  TEST(test_dict_find_or_insert_1);
   TEST(test_free_chain);
 
   TEST_FINI();
@@ -527,6 +529,93 @@ void test_dict_find_or_insert(TestObjs *objs) {
   wc_free_chain(dict[3]);
   wc_free_chain(dict[4]);
 
+}
+
+void test_dict_find_or_insert_1(TestObjs *objs) {
+  struct WordEntry *dict[5] = { NULL, NULL, NULL, NULL, NULL };
+  struct WordEntry *p;
+
+  // test1 should go in bucket 4
+  p = wc_dict_find_or_insert(dict, 5, (const unsigned char *) "test1");
+  ASSERT(dict[0] == NULL);
+  ASSERT(dict[1] == NULL);
+  ASSERT(dict[2] == NULL);
+  ASSERT(dict[4] == p);
+  ASSERT(dict[3] == NULL);
+  ASSERT(dict[4] != NULL);
+  ASSERT(p->count == 0);
+  ++p->count;
+
+
+  // test300 should go in bucket 2
+  p = wc_dict_find_or_insert(dict, 5, (const unsigned char *) "test300");
+  ASSERT(dict[0] == NULL);
+  ASSERT(dict[1] == NULL);
+  ASSERT(dict[2] != NULL);
+  ASSERT(dict[2] == p);
+  ASSERT(dict[3] == NULL);
+  ASSERT(dict[4] != NULL);
+  ASSERT(p->count == 0);
+  ++p->count;
+
+  // "trucker" should go in bucket 3
+  p = wc_dict_find_or_insert(dict, 5, (const unsigned char *) "trucker");
+  ASSERT(dict[0] == NULL);
+  ASSERT(dict[1] == NULL);
+  ASSERT(dict[2] != NULL);
+  ASSERT(dict[3] != NULL);
+  ASSERT(dict[3] == p);
+  ASSERT(dict[4] != NULL);
+  ASSERT(p->count == 0);
+  ++p->count;
+
+  // register another occurrence of "test1"
+  p = wc_dict_find_or_insert(dict, 5, (const unsigned char *) "test1");
+  ASSERT(dict[0] == NULL);
+  ASSERT(dict[1] == NULL);
+  ASSERT(dict[2] != NULL);
+  ASSERT(dict[3] != NULL);
+  ASSERT(dict[4] != NULL);
+  ASSERT(p->count == 1);
+  ++p->count;
+
+
+  // register another occurrence of "test300"
+  p = wc_dict_find_or_insert(dict, 5, (const unsigned char *) "test300");
+  ASSERT(dict[0] == NULL);
+  ASSERT(dict[1] == NULL);
+  ASSERT(dict[2] != NULL);
+  ASSERT(dict[3] != NULL);
+  ASSERT(dict[4] != NULL);
+  ASSERT(p->count == 1);
+  ++p->count;
+  
+  // register another occurrence of "trucker"
+  p = wc_dict_find_or_insert(dict, 5, (const unsigned char *) "trucker");
+  ASSERT(dict[0] == NULL);
+  ASSERT(dict[1] == NULL);
+  ASSERT(dict[2] != NULL);
+  ASSERT(dict[3] != NULL);
+  ASSERT(dict[4] != NULL);
+  ASSERT(p->count == 1);
+  ++p->count;
+
+  // register another occurrence of "trucker"
+  p = wc_dict_find_or_insert(dict, 5, (const unsigned char *) "trucker");
+  ASSERT(dict[0] == NULL);
+  ASSERT(dict[1] == NULL);
+  ASSERT(dict[2] != NULL);
+  ASSERT(dict[3] != NULL);
+  ASSERT(dict[4] != NULL);
+  ASSERT(p->count == 2);
+  ++p->count;
+  
+
+  wc_free_chain(dict[0]);
+  wc_free_chain(dict[1]);
+  wc_free_chain(dict[2]);
+  wc_free_chain(dict[3]);
+  wc_free_chain(dict[4]);
 }
 
 void test_free_chain(TestObjs *objs) {
