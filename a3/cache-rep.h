@@ -44,7 +44,7 @@ class Cache {
     };
 
     vector<Set> sets;
-    int numBlocks;
+    int numSlots;
     int loadHits;
     int loadMisses;
     int storeHits;
@@ -64,7 +64,7 @@ class Cache {
 
     public:
 
-    Cache(int blockSize, int numBlocks, bool writeThru, bool writeAlloc);
+    Cache(int slotSize, int numSlots, int numSets, bool writeThru, bool writeAlloc);
     void memStore(std::string memAddress);
     void memLoad(std::string memAddress);
     void printStats();
