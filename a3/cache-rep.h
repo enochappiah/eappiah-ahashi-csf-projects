@@ -18,7 +18,7 @@ class Cache {
     struct Slot {
         uint32_t tag;
         bool valid;
-        uint32_t load_ts, access_ts;
+        uint32_t insert_ts, access_ts;
         bool dirty;
     };
 
@@ -40,7 +40,7 @@ class Cache {
 
         bool isHit(uint32_t tag, int index);
 
-        bool isMiss(uint32_t tag);
+        bool isFull(uint32_t tag);
     };
 
     vector<Set> sets;
@@ -49,18 +49,17 @@ class Cache {
     int loadMisses;
     int storeHits;
     int storeMisses;
-    int blockSize;
+    int slotSize;
     bool lru;
     int numLoads;
     int numStores;
     int numCycles;
-    unsigned offset;
+    unsigned offsetBits;
     bool writeAlloc;
     bool writeThru;
     unsigned indexBits;
 
     void getValue(uint32_t tag, uint32_t index, std::string memAddress);
-
 
     public:
 

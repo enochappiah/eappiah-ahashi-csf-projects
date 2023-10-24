@@ -2,13 +2,14 @@
 #include <cstdint>
 #include <iostream>
 #include <math.h>
+#include <sys/types.h>
 
 Cache::Cache(int slotSize, int numSlots, int numSets, bool writeThru, bool writeAlloc) {
     for(int i = 0; i < numSets; i++) {
         sets.push_back(Set(numSlots));
     }
     indexBits = log2(numSets);
-    offset = log2(slotSize);
+    offsetBits = log2(slotSize);
     loadHits = 0;
     loadMisses = 0;
     storeHits = 0;
@@ -34,31 +35,110 @@ Cache::Set::Set(int numSlots) {
 }
 
 void Cache::getValue(uint32_t tag, uint32_t index, std::string memAddress) {
-
+    // hexadecmial to integer
+    uint32_t initialMem = std::stoul(memAddress,nullptr,16);
+    // chop off offset bits
+    initialMem = initialMem >> offsetBits;
+    uint32_t mask = (1 << indexBits) - 1;
+    index = initialMem & mask;
+    tag = initialMem >> indexBits;
 }
 
 int Cache::Set::evictLRU(uint32_t tag) {
-
+    int lruSlot = 0;
+    int curMinimum = max_ts;
+    for (int i = 0; i < numSlots; i++) {
+        if (slots[i].access_ts < curMinimum) {
+            curMinimum = slots[i].access_ts;
+            lruSlot = i;
+        }
+    }
+    this->slots[lruSlot].access_ts = max_ts;
+    max_ts++;
+    this->slots[lruSlot].tag = tag;
+    return lruSlot;
 }
 
 int Cache::Set::evictFIFO(uint32_t tag) {
 
 }
 
-bool Cache::Set::isHit(uint32_t tag, int index) {
-
+bool Cache::Set::isHit(uint32_t tag, int hitIndex) {
+    for (int i = 0; i < numSlots; i++) {
+        if (slots[i].tag == tag && slots[i].valid) {
+            slots[i].access_ts = max_ts;
+            max_ts++;
+            hitIndex = i;
+            return true;
+        }
+    }
+    return false;
 }
 
-bool Cache::Set::isMiss(uint32_t tag) {
-
+bool Cache::Set::isFull(uint32_t tag) {
+    for (int i = 0; i < numSlots; i++) {
+        if (!slots[i].valid) {
+            slots[i].valid = true;
+            slots[i].access_ts = max_ts;
+            max_ts++;
+            slots[i].tag = tag;
+            slots[i].insert_ts = numInserts;
+            numInserts++;
+            return false;
+        }
+    }
+    return true;
 }
 
 void Cache::memStore(std::string memAddress) {
+    numStores++;
+    uint32_t index, tag;
+    getValue(tag, index, memAddress);
+    int hitIndex = 0;
+    Set &curSet = sets[index];
+    if (curSet.isHit(hitIndex, tag)) {
+        storeHits++;
+        numCycles++;
 
+        if (writeThru) {
+            numCycles += 100;
+        } else {
+            curSet.slots[hitIndex].dirty = true;
+        }
+    } else {
+        storeMisses++;
+        if (writeAlloc) {
+            numCycles += 100 * (slotSize / 4);
+            numCycles++;
+            if (curSet.isFull(tag)) {
+                int evictIndex = curSet.evictLRU(tag); // CHANGE LATER
+                if (curSet.slots[evictIndex].dirty) {
+                    numCycles += 100 * (slotSize / 4);
+                }
+            }
+        } else {
+            numCycles += 100;
+        }
+    }
 }
 
 void Cache::memLoad(std::string memAddress) {
-
+    uint32_t index, tag;
+    numLoads++;
+    getValue(tag, index, memAddress);
+    int hitIndex = 0;
+    Set &curSet = sets[index];
+    if (curSet.isHit(tag, hitIndex)) {
+        numCycles++;
+        loadHits++;
+    } else {
+        numCycles += 100 * (slotSize / 4);
+        numCycles++;
+        loadMisses++;
+        if (curSet.isFull(tag)) {
+            lru = curSet.evictLRU(tag);
+        }
+    }
 }
 
 void Cache::printStats() {
