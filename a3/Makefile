@@ -5,14 +5,18 @@ DEBUGGING_FLAGS = -g -O0
 CFLAGS = $(CONSERVATIVE_FLAGS) $(DEBUGGING_FLAGS)
 
 
-csim: main.o csimFunc.o
-	$(CC) -o csim main.o csimFunc.o
+csim: main.o cache-rep.o
+	$(CC) -o csim main.o cache-rep.o
 
-main.o: main.cpp csim_func.h
+main.o: main.cpp cache-rep.h
 	$(CC) -c main.cpp $(CFLAGS)
 
-csimFunc.o : csim_func.cpp csim_func.h
-	$(CC) -c csim_func.cpp $(CFLAGS)
+cache-rep.o: cache-rep.cpp cache-rep.h
+	$(CC) -c cache-rep.cpp $(CFLAGS)
+
+solution.zip: 
+	rm -f solution.zip
+	zip -9r $@ Makefile README.txt *.h *.cpp
 
 clean:
-	rm -f *.o csim *~
+	rm -f *.o $(EXES) *~
