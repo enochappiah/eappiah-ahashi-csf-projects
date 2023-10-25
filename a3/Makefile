@@ -14,9 +14,9 @@ main.o: main.cpp cache-rep.h
 cache-rep.o: cache-rep.cpp cache-rep.h
 	$(CC) -c cache-rep.cpp $(CFLAGS)
 
-solution.zip: 
-	rm -f solution.zip
+assign3.zip: 
+	rm -f assign3.zip
 	zip -9r $@ Makefile README.txt *.h *.cpp
 
 clean:
-	rm -f csim $(EXES) *~
+	rm -f csim *.o depend.mak
