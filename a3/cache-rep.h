@@ -18,7 +18,7 @@ class Cache {
     struct Slot {
         uint32_t tag;
         bool valid;
-        uint32_t insert_ts, access_ts;
+        int insert_ts, access_ts;
         bool dirty;
     };
 
@@ -38,7 +38,7 @@ class Cache {
 
         int evictFIFO(uint32_t tag);
 
-        bool isHit(uint32_t tag, int index);
+        bool isHit(uint32_t tag, int &index);
 
         bool isFull(uint32_t tag);
     };
@@ -50,7 +50,7 @@ class Cache {
     int storeHits;
     int storeMisses;
     int slotSize;
-    bool lru;
+    bool evictMethod;
     int numLoads;
     int numStores;
     int numCycles;
@@ -59,11 +59,11 @@ class Cache {
     bool writeThru;
     unsigned indexBits;
 
-    void getValue(uint32_t tag, uint32_t index, std::string memAddress);
+    void getValue(uint32_t &tag, uint32_t &index, std::string memAddress);
 
     public:
 
-    Cache(int slotSize, int numSlots, int numSets, bool writeThru, bool writeAlloc);
+    Cache(int slotSize, int numSlots, int numSets, bool writeThru, bool writeAlloc, bool evictMethod);
     void memStore(std::string memAddress);
     void memLoad(std::string memAddress);
     void printStats();

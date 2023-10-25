@@ -6,7 +6,7 @@
 #include "cache-rep.h"
 
 void convertToLower(std::string &string);
-void setChoicesToBoolean(bool *choicesArray, std::string allocateString, std::string writeString, std::string evictMethodString);
+void setStringToBoolean(bool *choicesArray, std::string allocateString, std::string writeString, std::string evictMethodString);
 void getInputs(std::string line, std::string& operation, std::string &memAddress);
 
 int main(int argc, char* argv[]) {
@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
   convertToLower(strategyString);
 
   bool choices[4];
-  setChoicesToBoolean(choices, allocateString, writeString, strategyString);
+  setStringToBoolean(choices, allocateString, writeString, strategyString);
 
   if (!choices[3]) { //cchecking boolean array to make sure variables are correct
     return 1;
@@ -83,9 +83,9 @@ int main(int argc, char* argv[]) {
 
   bool allocateBool = choices[0];
   bool writeBool = choices[1];
-  bool evictMethod = choices[2];
+  bool evictMethodBool = choices[2];
 
-  Cache cache(blockSize, blocks, sets, writeBool, allocateBool);
+  Cache cache(blockSize, blocks, sets, writeBool, allocateBool, evictMethodBool);
   
 
   std::string line;
@@ -113,7 +113,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  void setChoicesToBoolean(bool *choices, std::string allocateChoice, std::string writeChoice, std::string evictMethodChoice) {
+  void setStringToBoolean(bool *choices, std::string allocateChoice, std::string writeChoice, std::string evictMethodChoice) {
 
     choices[3] = true; //error signal index
 

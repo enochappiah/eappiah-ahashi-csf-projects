@@ -19,4 +19,4 @@ solution.zip:
 	zip -9r $@ Makefile README.txt *.h *.cpp
 
 clean:
-	rm -f *.o $(EXES) *~
+	rm -f csim $(EXES) *~
