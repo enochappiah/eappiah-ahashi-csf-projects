@@ -4,6 +4,16 @@
 #include <math.h>
 #include <sys/types.h>
 
+void Cache::printStats() {
+    std::cout << "Total loads: " << numLoads << std::endl;
+    std::cout << "Total stores: " << numStores << std::endl;
+    std::cout << "Load hits: " << loadHits << std::endl;
+    std::cout << "Load misses: " << loadMisses << std::endl;
+    std::cout << "Store hits: " << storeHits << std::endl;
+    std::cout << "Store misses: " << storeMisses << std::endl;
+    std::cout << "Total cycles: " << numCycles << std::endl;
+}
+
 Cache::Cache(int slotSize, int numSlots, int numSets, bool writeThru, bool writeAlloc, bool evictMethod) {
     for(int i = 0; i < numSets; i++) {
         sets.push_back(Set(numSlots));
@@ -169,14 +179,4 @@ void Cache::memLoad(std::string memAddress) {
             //evictMethod = curSet.evictFIFO(tag);
         }
     }
-}
-
-void Cache::printStats() {
-    std::cout << "Total loads: " << numLoads << std::endl;
-    std::cout << "Total stores: " << numStores << std::endl;
-    std::cout << "Load hits: " << loadHits << std::endl;
-    std::cout << "Load misses: " << loadMisses << std::endl;
-    std::cout << "Store hits: " << storeHits << std::endl;
-    std::cout << "Store misses: " << storeMisses << std::endl;
-    std::cout << "Total cycles: " << numCycles << std::endl;
 }
