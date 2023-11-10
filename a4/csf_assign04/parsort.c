@@ -85,42 +85,42 @@ void merge_sort(int64_t *arr, size_t begin, size_t end, size_t threshold) {
       exit(0);
     }
 
-    int leftChildInfo;
-    int rightChildInfo;
-    pid_t leftWaitReturn = waitpid(leftHalf, &leftChildInfo, 0);
-    pid_t rightWaitReturn = waitpid(rightHalf, &rightChildInfo, 0);
-    if (leftWaitReturn == -1) {
-      fprintf(stderr, "Error: Something went wrong with child process\n");
+    int leftStatus;
+    int rightStatus;
+    pid_t actual_pid_left = waitpid(leftHalf, &leftStatus, 0);
+    pid_t actual_pid_right = waitpid(rightHalf, &rightStatus, 0);
+
+    // handle waitpid failure
+    if (actual_pid_left == -1) {
+      fprintf(stderr, "Error: Waitpid failure with left half\n");
       exit(1);
     }
 
-    if (!WIFEXITED(leftChildInfo)) {
+    if (!WIFEXITED(leftStatus)) {
       fprintf(stderr, "Error: Left child did not exit normally\n");
       exit(1);
     }
 
-    if(WEXITSTATUS(leftChildInfo) != 0) {
+    if(WEXITSTATUS(leftStatus) != 0) {
       fprintf(stderr, "Error: Bad exit status with left child\n");
       exit(1);
     }
 
-    if (rightWaitReturn == -1) {
-      fprintf(stderr, "Error: Something went wrong with child process\n");
+    // handle waitpid failure
+    if (actual_pid_right == -1) {
+      fprintf(stderr, "Error: Waitpid failure with right half\n");
       exit(1);
     }
 
-    if (!WIFEXITED(rightChildInfo)) {
+    if (!WIFEXITED(rightStatus)) {
       fprintf(stderr, "Error: Right child did not exit normally\n");
       exit(1);
     }
 
-    if(WEXITSTATUS(rightChildInfo) != 0) {
+    if(WEXITSTATUS(rightStatus) != 0) {
       fprintf(stderr, "Error: Bad exit status with right child\n");
       exit(1);
     }
-  
-
-
 
   // allocate temp array now, so we can avoid unnecessary work
   // if the malloc fails
@@ -156,19 +156,19 @@ int main(int argc, char **argv) {
   char *end;
   size_t threshold = (size_t) strtoul(argv[2], &end, 10);
   if (end != argv[2] + strlen(argv[2])) {
-    // TODO: report an error (threshold value is invalid)
+    // report an error (threshold value is invalid)
     fprintf(stderr, "Error: Threshold value is invalid\n");
     return 1;
   }
 
-  // TODO: open the file
+  // open the file
   int fd = open(filename, O_RDWR);
   if (fd < 0) {
     fprintf(stderr, "Error: Could not open file\n");
     return 1;
   }
 
-  // TODO: use fstat to determine the size of the file
+  // use fstat to determine the size of the file
   struct stat statbuf;
   int rc = fstat(fd, &statbuf);
   if (rc != 0) {
@@ -180,7 +180,7 @@ int main(int argc, char **argv) {
   size_t file_size_in_bytes = statbuf.st_size;
 
 
-  // TODO: map the file into memory using mmap
+  // map the file into memory using mmap
   int64_t *data = mmap(NULL, file_size_in_bytes, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
   if (data == MAP_FAILED) {
     fprintf(stderr, "Error: Could not map to memory\n");
@@ -188,11 +188,11 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  // TODO: sort the data!
+  // sort the data!
   size_t len = file_size_in_bytes/ sizeof(int64_t);
   merge_sort(data, 0, len, threshold);
 
-  // TODO: unmap and close the file
+  // unmap and close the file
   if (munmap(data, file_size_in_bytes) == -1) {
     fprintf(stderr, "Error: Unmapping did not work properly\n");
     close(fd);
@@ -205,5 +205,5 @@ int main(int argc, char **argv) {
   }
   return 0;
 
-  // TODO: exit with a 0 exit code if sort was successful
+  // exit with a 0 exit code if sort was successful
 }
