@@ -6,6 +6,7 @@
 #include "message.h"
 #include "connection.h"
 #include "client_util.h"
+#include "cstring"
 
 int main(int argc, char **argv) {
   if (argc != 4) {
@@ -22,8 +23,10 @@ int main(int argc, char **argv) {
   username = argv[3];
 
   // TODO: connect to server
+  int fd = open_clientfd(server_hostname.c_str() ,argv[2]);
 
   // TODO: send slogin message
+  
 
   // TODO: loop reading commands from user, sending messages to
   //       server as appropriate
