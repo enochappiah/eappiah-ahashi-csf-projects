@@ -21,7 +21,10 @@ int main(int argc, char **argv) {
   Connection conn;
 
   // TODO: connect to server
-
+  int fd = open_clientfd(server_hostname.c_str() ,argv[2]);
+  if (fd < 0) {
+    std::cerr << "Couldn't connect to server\n";
+  }
   // TODO: send rlogin and join messages (expect a response from
   //       the server for each one)
 

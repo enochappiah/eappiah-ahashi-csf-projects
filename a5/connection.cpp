@@ -1,3 +1,4 @@
+#include <iostream>
 #include <sstream>
 #include <cctype>
 #include <cassert>
@@ -14,11 +15,17 @@ Connection::Connection(int fd)
   : m_fd(fd)
   , m_last_result(SUCCESS) {
   // TODO: call rio_readinitb to initialize the rio_t object
+  rio_t rio;
+  rio_readinitb(&rio, fd);
 }
 
 void Connection::connect(const std::string &hostname, int port) {
   // TODO: call open_clientfd to connect to the server
   // TODO: call rio_readinitb to initialize the rio_t object
+  int fd = open_clientfd(hostname.c_str(), port);
+  if (fd < 0) {
+    std::cerr << "Couldn't connect to server\n";
+  }
 }
 
 Connection::~Connection() {
@@ -37,10 +44,23 @@ bool Connection::send(const Message &msg) {
   // TODO: send a message
   // return true if successful, false if not
   // make sure that m_last_result is set appropriately
+
+
+  rio_writen(fd, msg, sizeof(msg));
+  rio_writen(fd, "\n", 1);
+
+
+
+  
 }
 
 bool Connection::receive(Message &msg) {
   // TODO: receive a message, storing its tag and data in msg
   // return true if successful, false if not
   // make sure that m_last_result is set appropriately
+
+  rio_t rio;
+  rio_readinitb(&rio, fd);
+  char buf[1000];
+  ssize_t n = rio_readlineb(&rio, buf, sizeof(buf));
 }
