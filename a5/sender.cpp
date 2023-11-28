@@ -1,5 +1,7 @@
+#include <cstdio>
 #include <exception>
 #include <iostream>
+#include <ostream>
 #include <string>
 #include <sstream>
 #include <stdexcept>
@@ -35,6 +37,13 @@ int main(int argc, char **argv) {
   connection.send(slogin_message);
 
 
+  Message server_response;
+  if (!connection.receive(server_response) || server_response.tag == TAG_ERR) {
+    std::cerr << server_response.data << std::endl;
+    exit(1);
+  }
+
+
  // TODO: loop reading commands from user, sending messages to
  //       server as appropriate
 
@@ -43,19 +52,34 @@ int main(int argc, char **argv) {
    if (!std::getline(std::cin, input)) {
      break;
    }
-
    input = trim(input);
-   if (input == "/quit") {
+   std::stringstream ss (input);
+   std::string command;
+   ss >> command;
+
+   //TODO remove just for testing purposes
+   std::cout << ss.str() << std::endl; 
+   std::cout << command << std::endl; 
+
+
+   if (ss.str() == "/quit") {
      Message user_quit(TAG_QUIT, "");
        connection.send(user_quit);
        break;
    }
 
 
-   if (input[0] == '/') {
-     // Handle join and leave
-     
-   } else {
+   if (ss.str() == "/join") {
+     //TODO Handle join
+     std::getline(ss, input);
+     Message joinMessage(TAG_JOIN, input);
+     //TODO CHECK MESSAGE/INPUT for correct information
+
+   } 
+   if (ss.str() == "/leave") {
+    //TODO handle leave
+   }
+   else {
      // normal message
      Message send_to_everyone(TAG_SENDALL, input);
        connection.send(send_to_everyone);

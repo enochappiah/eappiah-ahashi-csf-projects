@@ -23,6 +23,9 @@ int main(int argc, char **argv) {
   // TODO: connect to server
   conn.connect(server_hostname, server_port);
 
+  // TODO: send rlogin and join messages (expect a response from
+  //       the server for each one)
+
   Message rlogin_message(TAG_RLOGIN, username);
   if(!conn.send(rlogin_message)) {
     std::cerr << "rlogin message failure" << std::endl;
@@ -47,6 +50,8 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
+  // TODO: loop waiting for messages from server
+  //       (which should be tagged with TAG_DELIVERY)
 
   while(true) {
     Message received_message;
@@ -71,13 +76,5 @@ int main(int argc, char **argv) {
   }
 
   conn.close();
-
-  // TODO: send rlogin and join messages (expect a response from
-  //       the server for each one)
-
-  // TODO: loop waiting for messages from server
-  //       (which should be tagged with TAG_DELIVERY)
-
-
   return 0;
 }
