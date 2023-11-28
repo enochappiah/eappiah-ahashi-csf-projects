@@ -22,19 +22,45 @@ int main(int argc, char **argv) {
 
   // TODO: connect to server
   conn.connect(server_hostname, server_port);
-  Message rlogin_message(TAG_RLOGIN, username);
 
-  conn.send(rlogin_message);
+  Message rlogin_message(TAG_RLOGIN, username);
+  if(!conn.send(rlogin_message)) {
+    std::cerr << "rlogin message failure" << std::endl;
+    exit(1);
+  }
+
+  Message server_response;
+  if (!conn.receive(server_response) || server_response.tag == TAG_ERR) {
+    std::cerr << server_response.data << std::endl;
+    exit(1);
+  }
 
   Message join_message(TAG_JOIN, room_name);
+  if (!conn.send(join_message)) {
+    std::cerr << "join message failure" << std::endl;
+    exit(1);
+  }
 
-  conn.send(join_message);
+  Message join_response;
+  if (!conn.receive(join_response) || join_response.tag == TAG_ERR) {
+    std::cerr << join_response.data << std::endl;
+    exit(1);
+  }
+
 
   while(true) {
     Message received_message;
-    conn.receive(received_message);
+
+    if (!conn.receive(received_message)) {
+      std::cerr << "failed to receive message" << std::endl;
+      exit(1);
+    }
+
     if (received_message.tag == TAG_DELIVERY) {
-      std::cout << received_message.data << std::endl;
+      
+    }
+    if (received_message.tag == TAG_ERR) {
+      break;
     }
   }
 

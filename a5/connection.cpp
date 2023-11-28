@@ -26,16 +26,13 @@ Connection::Connection(int fd)
 void Connection::connect(const std::string &hostname, int port) {
  // TODO: call open_clientfd to connect to the server
  // TODO: call rio_readinitb to initialize the rio_t object
+
  std::string port_string = std::to_string(port);
 
-
  int fd = open_clientfd(hostname.c_str(), port_string.c_str());
-
-
  if (fd < 0) {
    std::cerr << "Couldn't connect to server\n";
  }
-
 
  rio_readinitb(&m_fdbuf, m_fd);
 }
@@ -69,8 +66,6 @@ bool Connection::send(const Message &msg) {
  // return true if successful, false if not
  // make sure that m_last_result is set appropriately
  std::string message = msg.tag + ":" + msg.data + "/n";
-
-
  if (message.length() > Message::MAX_LEN || msg.tag != TAG_ERR || msg.tag != TAG_OK || msg.tag != TAG_SLOGIN || msg.tag != TAG_RLOGIN || msg.tag != TAG_JOIN || msg.tag != TAG_LEAVE || msg.tag != TAG_SENDALL || msg.tag != TAG_SENDUSER || msg.tag != TAG_QUIT || msg.tag != TAG_DELIVERY || msg.tag != TAG_EMPTY) {
    m_last_result = INVALID_MSG;
    return false;
@@ -93,6 +88,9 @@ bool Connection::receive(Message &msg) {
 
 
  ssize_t num_bytes = Rio_readlineb(&m_fdbuf, buf, Message::MAX_LEN);
+ if (num_bytes > 0) {
+    printf("Received from server: %s", buf);
+  }
 
 
  if (num_bytes <= 0) {
