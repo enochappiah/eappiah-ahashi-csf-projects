@@ -1,3 +1,4 @@
+#include <iostream>
 #include <sstream>
 #include <cctype>
 #include <cassert>
@@ -32,7 +33,7 @@ void Connection::connect(const std::string &hostname, int port) {
 
 
  if (fd < 0) {
-   // FILL IN
+   std::cerr << "Couldn't connect to server\n";
  }
 
 

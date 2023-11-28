@@ -21,10 +21,25 @@ int main(int argc, char **argv) {
   Connection conn;
 
   // TODO: connect to server
-  int fd = open_clientfd(server_hostname.c_str() ,argv[2]);
-  if (fd < 0) {
-    std::cerr << "Couldn't connect to server\n";
+  conn.connect(server_hostname, server_port);
+  Message rlogin_message(TAG_RLOGIN, username);
+
+  conn.send(rlogin_message);
+
+  Message join_message(TAG_JOIN, room_name);
+
+  conn.send(join_message);
+
+  while(true) {
+    Message received_message;
+    conn.receive(received_message);
+    if (received_message.tag == TAG_DELIVERY) {
+      std::cout << received_message.data << std::endl;
+    }
   }
+
+  conn.close();
+
   // TODO: send rlogin and join messages (expect a response from
   //       the server for each one)
 

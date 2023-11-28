@@ -26,24 +26,17 @@ int main(int argc, char **argv) {
  username = argv[3];
 
 
- // TODO: connect to server
+  // TODO: connect to server
+  Connection connection;
+  connection.connect(server_hostname, server_port);
 
-
- Connection connection;
- try {
-   connection.connect(server_hostname, server_port);
- } catch (const std::exception &e) {
-   // Fill in
- }
+   // TODO: send slogin message
   Message slogin_message(TAG_SLOGIN, username);
+  connection.send(slogin_message);
 
 
- try {
-   connection.send(slogin_message);
- } catch (const std::exception &e) {
-   // Fill in
- }
-
+ // TODO: loop reading commands from user, sending messages to
+ //       server as appropriate
 
  std::string input;
  while (true) {
@@ -51,64 +44,24 @@ int main(int argc, char **argv) {
      break;
    }
 
-
    input = trim(input);
-
-
    if (input == "/quit") {
      Message user_quit(TAG_QUIT, "");
-     try {
        connection.send(user_quit);
-     } catch (const std::exception &e) {
-       // Fill in
-     }
-     break;
+       break;
    }
 
 
    if (input[0] == '/') {
-
-
      // Handle join and leave
-
-
    } else {
      // normal message
      Message send_to_everyone(TAG_SENDALL, input);
-     try {
        connection.send(send_to_everyone);
-     } catch (const std::exception &e) {
-       // Fill in
-     }
    }
-
-
-
-
-
-
  }
 
 
-
-
-
-
-
-
- // TODO: send slogin message
-
-
- // TODO: loop reading commands from user, sending messages to
- //       server as appropriate
-
-
- try {
    connection.close();
- } catch (const std::exception &e) {
-   // Fill in
- }
-
-
  return 0;
 }
