@@ -54,6 +54,7 @@ int main(int argc, char **argv) {
 
    if (input[0] == '/') {
      // Handle join and leave
+     
    } else {
      // normal message
      Message send_to_everyone(TAG_SENDALL, input);

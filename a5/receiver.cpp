@@ -57,6 +57,12 @@ int main(int argc, char **argv) {
     }
 
     if (received_message.tag == TAG_DELIVERY) {
+      size_t room_colon_index  = received_message.data.find(":");
+      size_t sender_colon_index = received_message.data.find(":", room_colon_index + 1);
+      std::string senderUsername = received_message.data.substr(room_colon_index + 1, sender_colon_index);
+      std::string messageToPrint = received_message.data.substr(sender_colon_index + 1);
+
+      std::cout << senderUsername + ": " + messageToPrint << std::endl;
       
     }
     if (received_message.tag == TAG_ERR) {
