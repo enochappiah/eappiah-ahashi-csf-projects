@@ -61,6 +61,9 @@ int main(int argc, char **argv) {
       exit(1);
     }
 
+    // delivery: <- tag
+    //->room:sender:message <- data
+
     if (received_message.tag == TAG_DELIVERY) {
       size_t room_colon_index  = received_message.data.find(":");
       size_t sender_colon_index = received_message.data.find(":", room_colon_index + 1);

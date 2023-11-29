@@ -29,8 +29,8 @@ void Connection::connect(const std::string &hostname, int port) {
 
  std::string port_string = std::to_string(port);
 
- int fd = open_clientfd(hostname.c_str(), port_string.c_str());
- if (fd < 0) {
+ m_fd = open_clientfd(hostname.c_str(), port_string.c_str());
+ if (m_fd < 0) {
    std::cerr << "Couldn't connect to server\n";
  }
 
@@ -68,6 +68,7 @@ bool Connection::send(const Message &msg) {
  std::string message = msg.tag + ":" + msg.data + "/n";
  if (message.length() > Message::MAX_LEN || msg.tag != TAG_ERR || msg.tag != TAG_OK || msg.tag != TAG_SLOGIN || msg.tag != TAG_RLOGIN || msg.tag != TAG_JOIN || msg.tag != TAG_LEAVE || msg.tag != TAG_SENDALL || msg.tag != TAG_SENDUSER || msg.tag != TAG_QUIT || msg.tag != TAG_DELIVERY || msg.tag != TAG_EMPTY) {
    m_last_result = INVALID_MSG;
+   std::cerr << "ERRROR HERE" << std::endl;
    return false;
  }
 

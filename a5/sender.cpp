@@ -34,7 +34,10 @@ int main(int argc, char **argv) {
 
    // TODO: send slogin message
   Message slogin_message(TAG_SLOGIN, username);
-  connection.send(slogin_message);
+  if (!connection.send(slogin_message)) {
+    std::cerr << "ERRROR" << std::endl;
+  }
+  
 
 
   Message server_response;
@@ -58,8 +61,8 @@ int main(int argc, char **argv) {
    ss >> command;
 
    //TODO remove just for testing purposes
-   std::cout << ss.str() << std::endl; 
-   std::cout << command << std::endl; 
+   std::cout << ss.str() << std::endl; // /join, /leave /quit
+   std::cout << command << std::endl; // /join, /leave /quit
 
 
    if (ss.str() == "/quit") {
@@ -71,8 +74,13 @@ int main(int argc, char **argv) {
 
    if (ss.str() == "/join") {
      //TODO Handle join
-     std::getline(ss, input);
+     std::getline(ss, input, '\n');
      Message joinMessage(TAG_JOIN, input);
+     
+     if (!connection.send(joinMessage)) {
+        break; //TODO ERROR HERE
+     }
+
      //TODO CHECK MESSAGE/INPUT for correct information
 
    } 
