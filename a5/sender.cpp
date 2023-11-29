@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
 
  std::string input;
  while (true) {
-  // TODO prompt arrow here
+  
   std::cout << "> ";
    if (!std::getline(std::cin, input)) {
      break;
@@ -89,12 +89,25 @@ int main(int argc, char **argv) {
     
    } 
    if (command == "/leave") {
-    //TODO handle leave
+
+     std::getline(ss, input, '\n');
+     Message leaveMessage(TAG_LEAVE, input);
+     
+      connection.send(leaveMessage);
+    if (!connection.receive(server_response) || server_response.tag == TAG_ERR) {
+      std::cerr << server_response.data << std::endl;
+      //exit(1);
+    }
    }
    else {
      // normal message
+      std::getline(ss, input, '\n');
      Message send_to_everyone(TAG_SENDALL, input);
-       connection.send(send_to_everyone);
+      connection.send(send_to_everyone);
+     if (!connection.receive(server_response) || server_response.tag == TAG_ERR) {
+      std::cerr << server_response.data << std::endl;
+      //exit(1);
+    }
    }
  }
 
