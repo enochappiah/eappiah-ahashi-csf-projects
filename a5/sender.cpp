@@ -56,19 +56,21 @@ int main(int argc, char **argv) {
      break;
    }
    input = trim(input);
+   //std::cout << input << std::endl;
    std::stringstream ss (input);
+   //std::cout << input << std::endl;
    std::string command;
    ss >> command;
 
    if (command != "/quit" && command != "/join" && command != "/leave") {
-      ss << command;
-      std::getline(ss, input, '\n');
+      //ss << command;
+      // std::string payload;
+      // std::getline(input, payload, '\n');
+      //std::cout << input << std::endl;
      Message send_to_everyone(TAG_SENDALL, input);
       connection.send(send_to_everyone);
      if (!connection.receive(server_response) || server_response.tag == TAG_ERR) {
-      //std::cout << "pelase" <<std::endl;
       std::cerr << server_response.data << std::endl;
-      //exit(1);
     }
    } else if (command == "/quit") {
       Message user_quit(TAG_QUIT, "");
