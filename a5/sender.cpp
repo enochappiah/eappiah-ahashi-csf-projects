@@ -38,8 +38,6 @@ int main(int argc, char **argv) {
     std::cerr << "ERRROR" << std::endl;
   }
   
-
-
   Message server_response;
   if (!connection.receive(server_response) || server_response.tag == TAG_ERR) {
     std::cerr << server_response.data << std::endl;
@@ -52,6 +50,8 @@ int main(int argc, char **argv) {
 
  std::string input;
  while (true) {
+  // TODO prompt arrow here
+  std::cout << "> ";
    if (!std::getline(std::cin, input)) {
      break;
    }
@@ -60,22 +60,20 @@ int main(int argc, char **argv) {
    std::string command;
    ss >> command;
 
-   //TODO remove just for testing purposes
-   std::cout << ss.str() << std::endl; // /join, /leave /quit
-   std::cout << command << std::endl; // /join, /leave /quit
 
-
-   if (ss.str() == "/quit") {
+   if (command == "/quit") {
      Message user_quit(TAG_QUIT, "");
-       connection.send(user_quit);
+    connection.send(user_quit);
        break;
    }
 
 
-   if (ss.str() == "/join") {
+   if (command == "/join") {
      //TODO Handle join
      std::getline(ss, input, '\n');
+    //std::string line = getline(ss, input, '\n');
      Message joinMessage(TAG_JOIN, input);
+     std::string message = joinMessage.tag + ":" + joinMessage.data + "\n";
      
      if (!connection.send(joinMessage)) {
         break; //TODO ERROR HERE
