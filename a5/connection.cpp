@@ -33,6 +33,7 @@ void Connection::connect(const std::string &hostname, int port) {
  if (m_fd < 0) {
    std::cerr << "Couldn't connect to server\n";
  }
+ std::cout << m_fd << std::endl;
 
  rio_readinitb(&m_fdbuf, m_fd);
 }
@@ -55,7 +56,9 @@ bool Connection::is_open() const {
 void Connection::close() {
  // TODO: close the connection if it is open
  if (is_open()) {
+  
    Close(m_fd);
+  std::cout << m_fd << std::endl;
    // alter file descriptor
  }
 }
@@ -93,9 +96,9 @@ bool Connection::receive(Message &msg) {
  ssize_t num_bytes = Rio_readlineb(&m_fdbuf, buf, Message::MAX_LEN);
 
 // TESTING PURPOSES
-//  if (num_bytes > 0) { 
-//     printf("Received from server: %s", buf);
-//   }
+ if (num_bytes > 0) { 
+    printf("Received from server: %s ", buf);
+  }
 
 
  if (num_bytes <= 0) {

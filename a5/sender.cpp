@@ -62,27 +62,33 @@ int main(int argc, char **argv) {
 
 
    if (command == "/quit") {
-     Message user_quit(TAG_QUIT, "");
-    connection.send(user_quit);
-       break;
+      Message user_quit(TAG_QUIT, "");
+      connection.send(user_quit);
+    if (!connection.receive(server_response) || server_response.tag == TAG_ERR) {
+      std::cerr << server_response.data << std::endl;
+      exit(1);
+    }
+      break;
    }
 
 
    if (command == "/join") {
-     //TODO Handle join
      std::getline(ss, input, '\n');
-    //std::string line = getline(ss, input, '\n');
      Message joinMessage(TAG_JOIN, input);
-     std::string message = joinMessage.tag + ":" + joinMessage.data + "\n";
      
-     if (!connection.send(joinMessage)) {
-        break; //TODO ERROR HERE
-     }
+      connection.send(joinMessage);
+    if (!connection.receive(server_response) || server_response.tag == TAG_ERR) {
+      std::cerr << server_response.data << std::endl;
+      //exit(1);
+    }
 
-     //TODO CHECK MESSAGE/INPUT for correct information
-
+     
+     //TESTING PURPOSES REMOVE LATER CHECK MESSAGE/INPUT for correct information
+     std::string message = joinMessage.tag + ":" + joinMessage.data + "\n";
+     std::cout << message << std::endl;
+    
    } 
-   if (ss.str() == "/leave") {
+   if (command == "/leave") {
     //TODO handle leave
    }
    else {
