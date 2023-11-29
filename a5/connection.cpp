@@ -93,9 +93,9 @@ bool Connection::receive(Message &msg) {
  ssize_t num_bytes = Rio_readlineb(&m_fdbuf, buf, Message::MAX_LEN);
 
 // TESTING PURPOSES
-//  if (num_bytes > 0) { 
-//     printf("Received from server: %s ", buf);
-//   }
+ if (num_bytes > 0) { 
+    printf("Received from server: %s ", buf);
+  }
 
 
  if (num_bytes <= 0) {

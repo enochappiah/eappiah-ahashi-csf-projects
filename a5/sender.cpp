@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
    // TODO: send slogin message
   Message slogin_message(TAG_SLOGIN, username);
   if (!connection.send(slogin_message)) {
-    std::cerr << "ERRROR" << std::endl;
+    std::cerr << "error" << std::endl;
   }
   
   Message server_response;
@@ -52,73 +52,53 @@ int main(int argc, char **argv) {
  while (true) {
 
   std::cout << "> ";
-   if (!std::getline(std::cin, input)) {
-     break;
-   }
-   input = trim(input);
-   //std::cout << input << std::endl;
-   std::stringstream ss (input);
-   //std::cout << input << std::endl;
-   std::string command;
-   ss >> command;
+  if (!std::getline(std::cin, input)) {
+    break;
+  }
+  input = trim(input);
+  std::stringstream ss (input);
+  std::string command;
+  ss >> command;
 
-   if (command != "/quit" && command != "/join" && command != "/leave") {
-      //ss << command;
-      // std::string payload;
-      // std::getline(input, payload, '\n');
-      //std::cout << input << std::endl;
-     Message send_to_everyone(TAG_SENDALL, input);
-      connection.send(send_to_everyone);
-     if (!connection.receive(server_response) || server_response.tag == TAG_ERR) {
+  
+
+
+
+
+
+
+
+  if (command != "/quit" && command != "/join" && command != "/leave") {
+    Message send_to_everyone(TAG_SENDALL, input);
+    connection.send(send_to_everyone);
+    if (!connection.receive(server_response) || server_response.tag == TAG_ERR) {
       std::cerr << server_response.data << std::endl;
     }
-   } else if (command == "/quit") {
+  } else if (command == "/quit") {
       Message user_quit(TAG_QUIT, "");
       connection.send(user_quit);
-    if (!connection.receive(server_response) || server_response.tag == TAG_ERR) {
-      std::cerr << server_response.data << std::endl;
-      exit(1);
-    }
+      if (!connection.receive(server_response) || server_response.tag == TAG_ERR) {
+        std::cerr << server_response.data << std::endl;
+        exit(1);
+      }
       break;
    } else if (command == "/join") {
-     std::getline(ss, input, '\n');
-     Message joinMessage(TAG_JOIN, input);
-     
+      std::getline(ss, input, '\n');
+      Message joinMessage(TAG_JOIN, input);
       connection.send(joinMessage);
-    if (!connection.receive(server_response) || server_response.tag == TAG_ERR) {
-      std::cerr << server_response.data << std::endl;
-      //exit(1);
-    }
-
-     
-     //TESTING PURPOSES REMOVE LATER CHECK MESSAGE/INPUT for correct information
-    //  std::string message = joinMessage.tag + ":" + joinMessage.data + "\n";
-    //  std::cout << message << std::endl;
-    
+      if (!connection.receive(server_response) || server_response.tag == TAG_ERR) {
+        std::cerr << server_response.data << std::endl;
+      }
    } else if (command == "/leave") {
-
-     std::getline(ss, input, '\n');
-     Message leaveMessage(TAG_LEAVE, input);
+      std::getline(ss, input, '\n');
+      Message leaveMessage(TAG_LEAVE, input);
       connection.send(leaveMessage);
-    if (!connection.receive(server_response) || server_response.tag == TAG_ERR) {
-      std::cerr << server_response.data << std::endl;
-      //exit(1);
-    }
+      if (!connection.receive(server_response) || server_response.tag == TAG_ERR) {
+        std::cerr << server_response.data << std::endl;
+      }
    } 
-  //  else {
-  //    // normal message
-  //     std::getline(ss, input, '\n');
-  //    Message send_to_everyone(TAG_SENDALL, input);
-  //     connection.send(send_to_everyone);
-  //    if (!connection.receive(server_response) || server_response.tag == TAG_ERR) {
-  //     //std::cout << "pelase" <<std::endl;
-  //     std::cerr << server_response.data << std::endl;
-  //     //exit(1);
-  //   }
-  //  }
- }
 
-
-   connection.close();
+  }
+  connection.close();
  return 0;
 }
