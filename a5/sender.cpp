@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
 
  std::string input;
  while (true) {
-  
+
   std::cout << "> ";
    if (!std::getline(std::cin, input)) {
      break;
@@ -84,8 +84,8 @@ int main(int argc, char **argv) {
 
      
      //TESTING PURPOSES REMOVE LATER CHECK MESSAGE/INPUT for correct information
-     std::string message = joinMessage.tag + ":" + joinMessage.data + "\n";
-     std::cout << message << std::endl;
+    //  std::string message = joinMessage.tag + ":" + joinMessage.data + "\n";
+    //  std::cout << message << std::endl;
     
    } 
    if (command == "/leave") {
@@ -105,6 +105,7 @@ int main(int argc, char **argv) {
      Message send_to_everyone(TAG_SENDALL, input);
       connection.send(send_to_everyone);
      if (!connection.receive(server_response) || server_response.tag == TAG_ERR) {
+      //std::cout << "pelase" <<std::endl;
       std::cerr << server_response.data << std::endl;
       //exit(1);
     }
