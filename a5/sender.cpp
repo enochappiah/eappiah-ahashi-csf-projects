@@ -83,12 +83,31 @@ int main(int argc, char **argv) {
       }
       break;
    } else if (command == "/join") {
-      std::getline(ss, input, '\n');
-      Message joinMessage(TAG_JOIN, input);
-      connection.send(joinMessage);
-      if (!connection.receive(server_response) || server_response.tag == TAG_ERR) {
-        std::cerr << server_response.data << std::endl;
-      }
+std::string room_name;
+    if (ss >> room_name) {
+        Message join_message(TAG_JOIN, room_name);
+        if (connection.send(join_message)) {
+            // Successfully sent join message, now wait for a response
+            if (connection.receive(server_response)) {
+                if (server_response.tag == TAG_ERR) {
+                    // Server sent an error response to join request
+                    std::cerr << "Server error: " << server_response.data << std::endl;
+                    continue;
+                } else if (server_response.tag == TAG_OK) {
+                    // Successfully joined the room
+                    std::cout << "Joined room: " << room_name << std::endl;
+                }
+            } else {
+                // Failed to receive a response after sending join message
+                std::cerr << "No response received after join request." << std::endl;
+            }
+        } else {
+            // Failed to send join message
+            std::cerr << "Failed to send join message." << std::endl;
+        }
+    } else {
+        std::cerr << "Incorrect Syntax: /join [room_name]" << std::endl;
+    }
    } else if (command == "/leave") {
       std::getline(ss, input, '\n');
       Message leaveMessage(TAG_LEAVE, input);
