@@ -70,6 +70,7 @@ int main(int argc, char **argv) {
 
   if (command != "/quit" && command != "/join" && command != "/leave") {
     Message send_to_everyone(TAG_SENDALL, input);
+    std::cout << send_to_everyone.data << "test" << std::endl;
     connection.send(send_to_everyone);
     if (!connection.receive(server_response) || server_response.tag == TAG_ERR) {
       std::cerr << server_response.data << std::endl;

@@ -74,7 +74,7 @@ bool Connection::send(const Message &msg) {
    return false;
  }
 
-
+ //std::cout << message << "helooooooo" << std::endl;
  Rio_writen(m_fd, message.c_str(), message.length()); // use a try-catch??
  m_last_result = SUCCESS;
  return true;
@@ -86,11 +86,13 @@ bool Connection::receive(Message &msg) {
  // return true if successful, false if not
  // make sure that m_last_result is set appropriately
 
-
+//std::cout << "in recieve method" << std::endl;
  char buf[Message::MAX_LEN];
 
 
  ssize_t num_bytes = Rio_readlineb(&m_fdbuf, buf, Message::MAX_LEN);
+
+ //std::cout << num_bytes << std::endl;
 
 // TESTING PURPOSES
 //  if (num_bytes > 0) { 
@@ -101,11 +103,11 @@ bool Connection::receive(Message &msg) {
 
  if (num_bytes <= 0) {
    m_last_result = EOF_OR_ERROR; // invalid_msg?
-   printf("Received from server: %s ", buf);
+   //printf("Received from server: %s ", buf);
    return false;
  }
 
-  printf("Outside Received from server: %s ", buf);
+  //printf("Outside Received from server: %s ", buf);
 
  // null terminator?
 
