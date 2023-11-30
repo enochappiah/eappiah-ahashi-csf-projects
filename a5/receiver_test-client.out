@@ -1,0 +1,17 @@
+Outside Received from server: ok:logeed in
+ Outside Received from server: ok:joined
+ New loop
+Outside Received from server: delivery:partytime:bob:hi alice
+ Line 67
+Line 73
+bob:hi alice
+
+You didn't hit any if statements
+New loop
+Outside Received from server: delivery:partytime:robert_de_bobert:I have the cookies.
+ Line 67
+Line 73
+robert_de_bobert:I have the cookies.
+
+You didn't hit any if statements
+New loop

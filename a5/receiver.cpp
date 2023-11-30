@@ -54,28 +54,37 @@ int main(int argc, char **argv) {
   //       (which should be tagged with TAG_DELIVERY)
 
   while(true) {
+    std::cout << "New loop" << std::endl;
+
     Message received_message;
 
     if (!conn.receive(received_message)) {
+      std::cout << "Is this where you are?" << std::endl;
       std::cerr << "failed to receive message" << std::endl;
       exit(1);
     }
+
+    std::cout << "Line 67" << std::endl;
 
     // delivery: <- tag
     //->room:sender:message <- data
 
     if (received_message.tag == TAG_DELIVERY) {
+      std::cout << "Line 73" << std::endl;
       size_t room_colon_index  = received_message.data.find(":");
       size_t sender_colon_index = received_message.data.find(":", room_colon_index + 1);
-      std::string senderUsername = received_message.data.substr(room_colon_index + 1, sender_colon_index);
+      std::string senderUsername = received_message.data.substr(room_colon_index + 1, sender_colon_index - room_colon_index - 1);
       std::string messageToPrint = received_message.data.substr(sender_colon_index + 1);
 
-      std::cout << senderUsername + ": " + messageToPrint << std::endl;
+      std::cout << senderUsername << ":" << messageToPrint << std::endl;
       
     }
     if (received_message.tag == TAG_ERR) {
+      std::cout << "Why are you here?" << std::endl;
       break;
     }
+
+    std::cout << "You didn't hit any if statements" << std::endl;
   }
 
   conn.close();
