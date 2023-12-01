@@ -34,15 +34,31 @@ int main(int argc, char **argv) {
 
    // TODO: send slogin message
   Message slogin_message(TAG_SLOGIN, username);
-  if (!connection.send(slogin_message)) {
-    std::cerr << "error" << std::endl;
-  }
-  
-  Message server_response;
-  if (!connection.receive(server_response) || server_response.tag == TAG_ERR) {
-    std::cerr << server_response.data << std::endl;
-    exit(1);
-  }
+if (!connection.send(slogin_message)) {
+  std::cerr << "Error: Failed to send login message." << std::endl;
+  exit(1);
+}
+
+// Receive server response for login
+Message server_response;
+if (!connection.receive(server_response)) {
+  std::cerr << "Error: Failed to receive response from server.";
+  connection.close();
+  exit(1);
+}
+
+// Check if the response is an error
+if (server_response.tag == TAG_ERR) {
+  std::cerr << server_response.data;
+  connection.close();
+  exit(1);
+}
+
+// Check for successful login
+if (server_response.tag != TAG_OK) {
+  std::cerr << "Error: Unexpected response tag from server: " << server_response.tag << std::endl;
+  exit(1);
+}
 
 
  // TODO: loop reading commands from user, sending messages to

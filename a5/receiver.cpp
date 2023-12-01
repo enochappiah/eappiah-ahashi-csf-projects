@@ -34,7 +34,8 @@ int main(int argc, char **argv) {
 
   Message server_response;
   if (!conn.receive(server_response) || server_response.tag == TAG_ERR) {
-    std::cerr << server_response.data << std::endl;
+    std::cerr << server_response.data;
+    conn.close();
     exit(1);
   }
 
@@ -76,7 +77,7 @@ int main(int argc, char **argv) {
       std::string senderUsername = received_message.data.substr(room_colon_index + 1, sender_colon_index - room_colon_index - 1);
       std::string messageToPrint = received_message.data.substr(sender_colon_index + 1);
 
-      std::cout << senderUsername << ":" << messageToPrint << std::endl;
+      std::cout << senderUsername << ": " << messageToPrint;
       
     } else if (received_message.tag == TAG_ERR) {
       //std::cout << "Why are you here?" << std::endl;

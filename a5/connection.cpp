@@ -32,6 +32,7 @@ void Connection::connect(const std::string &hostname, int port) {
  m_fd = open_clientfd(hostname.c_str(), port_string.c_str());
  if (m_fd < 0) {
    std::cerr << "Couldn't connect to server\n";
+   exit(1);
  }
 
 
