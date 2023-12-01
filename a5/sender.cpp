@@ -86,10 +86,10 @@ if (server_response.tag != TAG_OK) {
 
   if (command != "/quit" && command != "/join" && command != "/leave") {
     Message send_to_everyone(TAG_SENDALL, input);
-    std::cout << send_to_everyone.data << "test" << std::endl;
+    //std::cout << send_to_everyone.data << "test" << std::endl;
     connection.send(send_to_everyone);
     if (!connection.receive(server_response) || server_response.tag == TAG_ERR) {
-      std::cerr << server_response.data << std::endl;
+      std::cerr << server_response.data ;
     }
   } else if (command == "/quit") {
       Message user_quit(TAG_QUIT, "");
@@ -108,7 +108,7 @@ std::string room_name;
             if (connection.receive(server_response)) {
                 if (server_response.tag == TAG_ERR) {
                     // Server sent an error response to join request
-                    std::cerr << "Server error: " << server_response.data << std::endl;
+                    std::cerr << server_response.data ;
                     continue;
                 } else if (server_response.tag == TAG_OK) {
                     // Successfully joined the room
@@ -116,14 +116,14 @@ std::string room_name;
                 }
             } else {
                 // Failed to receive a response after sending join message
-                std::cerr << "No response received after join request." << std::endl;
+                std::cerr << "No response received after join request." ;
             }
         } else {
             // Failed to send join message
-            std::cerr << "Failed to send join message." << std::endl;
+            std::cerr << "Failed to send join message." ;
         }
     } else {
-        std::cerr << "Incorrect Syntax: /join [room_name]" << std::endl;
+        std::cerr << "Incorrect Syntax: /join [room_name]" ;
     }
    } else if (command == "/leave") {
       std::getline(ss, input, '\n');
