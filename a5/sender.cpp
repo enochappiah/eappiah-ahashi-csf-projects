@@ -43,14 +43,14 @@ if (!connection.send(slogin_message)) {
 Message server_response;
 if (!connection.receive(server_response)) {
   std::cerr << "Error: Failed to receive response from server.";
-  connection.close();
+  //connection.close();
   exit(1);
 }
 
 // Check if the response is an error
 if (server_response.tag == TAG_ERR) {
   std::cerr << server_response.data;
-  connection.close();
+  //connection.close();
   exit(1);
 }
 

@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
   Message server_response;
   if (!conn.receive(server_response) || server_response.tag == TAG_ERR) {
     std::cerr << server_response.data;
-    conn.close();
+    //conn.close();
     exit(1);
   }
 
@@ -47,7 +47,8 @@ int main(int argc, char **argv) {
 
   Message join_response;
   if (!conn.receive(join_response) || join_response.tag == TAG_ERR) {
-    std::cerr << join_response.data << std::endl;
+    std::cerr << join_response.data;
+    //conn.close();
     exit(1);
   }
 
