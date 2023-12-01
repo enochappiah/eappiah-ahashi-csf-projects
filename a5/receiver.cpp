@@ -1,15 +1,16 @@
-#include <iostream>
-#include <string>
-#include <vector>
-#include <stdexcept>
+#include "client_util.h"
+#include "connection.h"
 #include "csapp.h"
 #include "message.h"
-#include "connection.h"
-#include "client_util.h"
+#include <iostream>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 int main(int argc, char **argv) {
   if (argc != 5) {
-    std::cerr << "Usage: ./receiver [server_address] [port] [username] [room]\n";
+    std::cerr
+        << "Usage: ./receiver [server_address] [port] [username] [room]\n";
     return 1;
   }
 
@@ -22,7 +23,7 @@ int main(int argc, char **argv) {
   conn.connect(server_hostname, server_port);
 
   Message rlogin_message(TAG_RLOGIN, username);
-  if(!conn.send(rlogin_message)) {
+  if (!conn.send(rlogin_message)) {
     std::cerr << "rlogin message failure" << std::endl;
     exit(1);
   }
@@ -44,8 +45,7 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-
-  while(true) {
+  while (true) {
 
     Message received_message;
 
@@ -56,17 +56,21 @@ int main(int argc, char **argv) {
 
     if (received_message.tag == TAG_DELIVERY) {
 
-      size_t room_colon_index  = received_message.data.find(":");
-      size_t sender_colon_index = received_message.data.find(":", room_colon_index + 1);
-      std::string senderUsername = received_message.data.substr(room_colon_index + 1, sender_colon_index - room_colon_index - 1);
-      std::string messageToPrint = received_message.data.substr(sender_colon_index + 1);
+      size_t room_colon_index = received_message.data.find(":");
+      size_t sender_colon_index =
+          received_message.data.find(":", room_colon_index + 1);
+      
+      std::string senderUsername = received_message.data.substr(
+          room_colon_index + 1, sender_colon_index - room_colon_index - 1);
+      
+      std::string messageToPrint =
+          received_message.data.substr(sender_colon_index + 1);
 
       std::cout << senderUsername << ": " << messageToPrint;
-      
+
     } else if (received_message.tag == TAG_ERR) {
       break;
     }
-
   }
 
   conn.close();
