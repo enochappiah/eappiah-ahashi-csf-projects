@@ -28,11 +28,10 @@ int main(int argc, char **argv) {
  username = argv[3];
 
 
-  // TODO: connect to server
   Connection connection;
   connection.connect(server_hostname, server_port);
 
-   // TODO: send slogin message
+  
   Message slogin_message(TAG_SLOGIN, username);
 if (!connection.send(slogin_message)) {
   std::cerr << "Error: Failed to send login message." << std::endl;
@@ -43,14 +42,12 @@ if (!connection.send(slogin_message)) {
 Message server_response;
 if (!connection.receive(server_response)) {
   std::cerr << "Error: Failed to receive response from server.";
-  //connection.close();
   exit(1);
 }
 
 // Check if the response is an error
 if (server_response.tag == TAG_ERR) {
   std::cerr << server_response.data;
-  //connection.close();
   exit(1);
 }
 
@@ -59,10 +56,6 @@ if (server_response.tag != TAG_OK) {
   std::cerr << "Error: Unexpected response tag from server: " << server_response.tag << std::endl;
   exit(1);
 }
-
-
- // TODO: loop reading commands from user, sending messages to
- //       server as appropriate
 
  std::string input;
  while (true) {
@@ -76,17 +69,8 @@ if (server_response.tag != TAG_OK) {
   std::string command;
   ss >> command;
 
-  
-
-
-
-
-
-
-
   if (command != "/quit" && command != "/join" && command != "/leave") {
     Message send_to_everyone(TAG_SENDALL, input);
-    //std::cout << send_to_everyone.data << "test" << std::endl;
     connection.send(send_to_everyone);
     if (!connection.receive(server_response) || server_response.tag == TAG_ERR) {
       std::cerr << server_response.data ;
