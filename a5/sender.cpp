@@ -55,7 +55,6 @@ int main(int argc, char **argv) {
 
   std::string input;
   while (true) {
-
     std::cout << "> ";
     if (!std::getline(std::cin, input)) {
       break;
@@ -86,19 +85,19 @@ int main(int argc, char **argv) {
       if (ss >> room_name) {
         Message join_message(TAG_JOIN, room_name);
         if (connection.send(join_message)) {
-          // Successfully sent join message, now wait for a response
+          // Sent join message so now you have to wait for a response
           if (connection.receive(server_response)) {
             if (server_response.tag == TAG_ERR) {
-              // Server sent an error response to join request
+              // Server sent error response to join request
               std::cerr << server_response.data;
               continue;
             } else if (server_response.tag == TAG_OK) {
-              // Successfully joined the room
+              // Successfully joined room
               std::cout << "Joined room: " << room_name << std::endl;
             }
           } else {
-            // Failed to receive a response after sending join message
-            std::cerr << "No response received after join request.";
+            // Failed to receive response after sending join message
+            std::cerr << "No response received after request to join.";
           }
         } else {
           // Failed to send join message
