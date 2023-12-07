@@ -20,6 +20,8 @@
 // TODO: add any additional data types that might be helpful
 //       for implementing the Server member functions
 
+void sender_helper()
+
 ////////////////////////////////////////////////////////////////////////
 // Client thread functions
 ////////////////////////////////////////////////////////////////////////
@@ -32,6 +34,27 @@ void *worker(void *arg) {
   // TODO: use a static cast to convert arg from a void* to
   //       whatever pointer type describes the object(s) needed
   //       to communicate with a client (sender or receiver)
+  Connection *connection = static_cast<Connection*>(arg);
+
+  Message login_message;
+  if (!connection->receive(login_message)) {
+    std::cerr << "Failed to receive login message";
+  }
+
+  User *user = nullptr; 
+  if (login_message.tag == TAG_RLOGIN || login_message.tag == TAG_SLOGIN) {
+    user = new User(login_message.data);
+
+    Message server_response(TAG_OK, "Successful login");
+    connection->send(server_response);
+
+    if (login_message.tag == TAG_RLOGIN) {
+      receiver_helper();
+    } else {
+      sender_helper();
+    }
+
+  }
 
   // TODO: read login message (should be tagged either with
   //       TAG_SLOGIN or TAG_RLOGIN), send response
