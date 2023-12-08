@@ -68,12 +68,8 @@ void receiver_helper(Connection *connection, User *user) {
         // Attempt to send the message
         if (!connection->send(*msg)) {
             std::cerr << "Failed to send message to receiver\n";
-            delete msg;
             break;
         }
-
-        // Clean up the message after sending
-        delete msg;
     }
 }
 
