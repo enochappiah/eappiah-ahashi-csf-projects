@@ -164,9 +164,11 @@ void Server::handle_client_requests() {
       std::cerr << "Error in accepting client connection";
     }
 
-    Connection *info = new Connection(clientfd);
+    Connection *conn = new Connection(clientfd);
+    helper_struct *data = new helper_struct{conn, this};
+
     pthread_t thr_id;
-    pthread_create(&thr_id,NULL, worker, info);
+    pthread_create(&thr_id, NULL, worker, data);
   }
 }
 
