@@ -23,7 +23,12 @@
 // TODO: add any additional data types that might be helpful
 //       for implementing the Server member functions
 
-void sender_helper(Connection *connection, User *user) {
+struct helper_struct {
+  Connection *connection;
+  Server *server;
+};
+
+void sender_helper(Connection *connection, User *user, Server *server) {
   Message msg;
   while (true) {
     if (!connection->receive(msg)) {
@@ -32,13 +37,13 @@ void sender_helper(Connection *connection, User *user) {
     }
 
     if (msg.tag == TAG_SENDALL) {
-      Room *room = Server::find_or_create_room(msg.data);
+      Room *room = server->find_or_create_room(msg.data);
       room->broadcast_message(user->username, msg.data);
     } else if (msg.tag == TAG_JOIN) {
-      Room *room = Server::find_or_create_room(msg.data);
+      Room *room = server->find_or_create_room(msg.data);
       room->add_member(user);
     } else if (msg.tag == TAG_LEAVE) {
-      Room *room = Server::find_or_create_room(msg.data);
+      Room *room = server->find_or_create_room(msg.data);
       room->remove_member(user);
     } else if (msg.tag == TAG_QUIT) {
       break;
@@ -49,7 +54,28 @@ void sender_helper(Connection *connection, User *user) {
   }
 }
 
-void receiver_helper() {}
+void receiver_helper(Connection *connection, User *user) {
+  Message *msg;
+
+    // Continuously check for new messages and send them to the client
+    while (true) {
+        msg = user->mqueue.dequeue();
+        if (msg == nullptr) {
+            // No new messages or an error occurred, continue waiting
+            continue;
+        }
+
+        // Attempt to send the message
+        if (!connection->send(*msg)) {
+            std::cerr << "Failed to send message to receiver\n";
+            delete msg;
+            break;
+        }
+
+        // Clean up the message after sending
+        delete msg;
+    }
+}
 
 
 
@@ -65,7 +91,9 @@ void *worker(void *arg) {
   // TODO: use a static cast to convert arg from a void* to
   //       whatever pointer type describes the object(s) needed
   //       to communicate with a client (sender or receiver)
-  Connection *connection = static_cast<Connection*>(arg);
+  helper_struct *help = static_cast<helper_struct*>(arg);
+  Connection *connection = help->connection;
+  Server *server = help->server;
 
   Message login_message;
   if (!connection->receive(login_message)) {
@@ -80,9 +108,9 @@ void *worker(void *arg) {
     connection->send(server_response);
 
     if (login_message.tag == TAG_RLOGIN) {
-      receiver_helper(); // Implement
+      receiver_helper(connection, user); // Implement
     } else {
-      sender_helper(connection, user);
+      sender_helper(connection, user, server);
     }
 
 
