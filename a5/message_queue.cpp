@@ -23,10 +23,10 @@ void MessageQueue::enqueue(Message *msg) {
   // be sure to notify any thread waiting for a message to be
   // available by calling sem_post
 
-  { // Double check the bracket placement if something goes wrong
+   // Double check the bracket placement if something goes wrong
     Guard guard(m_lock);
     m_messages.push_back(msg);
-  }
+  
 
   sem_post(&m_avail);
 }

@@ -56,6 +56,7 @@ void Connection::close() {
 
 
 bool Connection::send(const Message &msg) {
+  //std::cout << msg.data << " I made it" << std::endl;
   
  std::string message = msg.tag + ":" + msg.data + "\n";
  if (message.length() > Message::MAX_LEN && msg.tag != TAG_ERR && msg.tag != TAG_OK && msg.tag != TAG_SLOGIN && msg.tag != TAG_RLOGIN && msg.tag != TAG_JOIN && msg.tag != TAG_LEAVE && msg.tag != TAG_SENDALL && msg.tag != TAG_SENDUSER && msg.tag != TAG_QUIT && msg.tag != TAG_DELIVERY && msg.tag != TAG_EMPTY) {
@@ -63,7 +64,7 @@ bool Connection::send(const Message &msg) {
    return false;
  }
 
- Rio_writen(m_fd, message.c_str(), message.length()); 
+ rio_writen(m_fd, message.c_str(), message.length()); 
  m_last_result = SUCCESS;
  return true;
 }

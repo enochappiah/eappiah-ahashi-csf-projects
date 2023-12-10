@@ -28,50 +28,130 @@ struct helper_struct {
   Server *server;
 };
 
-void sender_helper(Connection *connection, User *user, Server *server) {
-  Message msg;
-  while (true) {
-    if (!connection->receive(msg)) {
-      std::cerr << "Could not receive message from sender";
+void sender_helper(helper_struct *help, User *user) {
+  Message message_to_receive;
+  Message message_to_send;
+  Room *room;
+
+  while (help->connection->is_open()) {
+    if (!help->connection->receive(message_to_receive)) {
+      //std::cerr << "Could not receive message from sender";
+      // message_to_send = Message(TAG_ERR, "Could not receive message from sender\n");
+      message_to_send.tag = TAG_ERR;
+      message_to_send.data = "Could not receive message from sender";
+      //std::cout << message_to_receive.data << "this is it!" << std::endl;
+      help->connection->send(message_to_send);
       break;
     }
 
-    if (msg.tag == TAG_SENDALL) {
-      Room *room = server->find_or_create_room(msg.data);
-      room->broadcast_message(user->username, msg.data);
-    } else if (msg.tag == TAG_JOIN) {
-      Room *room = server->find_or_create_room(msg.data);
-      room->add_member(user);
-    } else if (msg.tag == TAG_LEAVE) {
-      Room *room = server->find_or_create_room(msg.data);
-      room->remove_member(user);
-    } else if (msg.tag == TAG_QUIT) {
+    if (message_to_receive.tag == TAG_SENDALL) {
+      //room = help->server->find_or_create_room(message_to_receive.data);
+      std::string trimmedData = message_to_receive.data.substr(0, message_to_receive.data.length() - 1); 
+      room->broadcast_message(user->username, trimmedData);
+      std::cout << "Sendall " << trimmedData << std::endl;
+      // message_to_send = Message(TAG_OK, "Successfully sent message!");
+      message_to_send.tag = TAG_OK;
+      message_to_send.data = "message sent";
+      std::cout << message_to_send.data << std::endl;
+      help->connection->send(message_to_send);
+    } else if (message_to_receive.tag == TAG_JOIN) {
+      std::string trimmedData = message_to_receive.data.substr(0, message_to_receive.data.length() - 1);
+      room = help->server->find_or_create_room(trimmedData);
+      std::cout << "Join " << trimmedData << std::endl;
+      message_to_send.tag = TAG_OK;
+      message_to_send.data = "joined room " + room->get_room_name();
+      help->connection->send(message_to_send);
+    } else if (message_to_receive.tag == TAG_LEAVE || message_to_receive.tag == TAG_QUIT) {
+      if (message_to_receive.tag == TAG_LEAVE) {
+        message_to_send.tag = TAG_OK;
+      message_to_send.data = "Sending ok for leave";
+      } else {
+        message_to_send.tag = TAG_OK;
+      message_to_send.data = "Sending ok for quit";
+      }
+      help->connection->send(message_to_send);
+      room = nullptr;
+    }
+
+    if(message_to_send.tag == TAG_ERR) {
       break;
     }
 
-    Message response(TAG_OK, "Message ok");
-    connection->send(response);
+    if (message_to_send.tag == TAG_QUIT) {
+      break;
+    }
   }
+
 }
 
-void receiver_helper(Connection *connection, User *user) {
-  Message *msg;
+void receiver_helper(helper_struct *help, User *user) {
+    Message message_to_receive;
+    Message message_to_send;
+    Room *room;
+    // Room *room = nullptr;
 
-    // Continuously check for new messages and send them to the client
-    while (true) {
-        msg = user->mqueue.dequeue();
-        if (msg == nullptr) {
-            // No new messages or an error occurred, continue waiting
-            continue;
-        }
+    // while (help->connection->is_open()) {
+    //     if (!help->connection->receive(message_to_receive)) {
+    //         message_to_send.tag = TAG_ERR;
+    //         message_to_send.data = "Error receiving message";
+    //         help->connection->send(message_to_send);
+    //         continue; // Continue listening for new messages instead of returning
+    //     }
 
-        // Attempt to send the message
-        if (!connection->send(*msg)) {
-            std::cerr << "Failed to send message to receiver\n";
-            break;
-        }
+    //     if (message_to_receive.tag == TAG_JOIN) {
+    //         std::string trimmedData = message_to_receive.data.substr(0, message_to_receive.data.length() - 1);
+    //         Room *room = help->server->find_or_create_room(trimmedData);
+    //         room->add_member(user);
+    //         message_to_send.tag = TAG_OK;
+    //         message_to_send.data = "welcome";
+    //         help->connection->send(message_to_send);
+    //     }
+
+    //     // Other message handling code (if needed) goes here
+    // }
+
+    // if (room) {
+    //     room->remove_member(user);
+    // }
+    // delete user;
+
+    //bool incoming_result = help->connection->receive(message_to_receive);
+    if(!help->connection->receive(message_to_receive) || message_to_receive.tag != TAG_JOIN) {
+      message_to_send.tag = TAG_ERR;
+      message_to_send.data = "No valid message received";
+      help->connection->send(message_to_send);
+      return;
     }
-}
+
+    std::string room_name = message_to_receive.data.substr(0,message_to_receive.data.length() - 1);
+    room = help->server->find_or_create_room(room_name);
+    room->add_member(user);
+    message_to_send.tag = TAG_OK;
+    message_to_send.data = "welcome";
+
+    help->connection->send(message_to_send);
+
+    while(help->connection->is_open()) {
+      Message *loop = user->mqueue.dequeue();
+
+      if(loop == nullptr) {
+        continue;
+      }
+
+      //bool result = help->connection->send(*loop);
+      if (!help->connection->send(*loop)) {
+        break;
+      }
+      delete loop;
+
+      // if (!result) {
+      //   break;
+      // }
+    }
+      room->remove_member(user);
+      delete user;
+    }
+
 
 
 
@@ -87,29 +167,35 @@ void *worker(void *arg) {
   // TODO: use a static cast to convert arg from a void* to
   //       whatever pointer type describes the object(s) needed
   //       to communicate with a client (sender or receiver)
-  helper_struct *help = static_cast<helper_struct*>(arg);
-  Connection *connection = help->connection;
-  Server *server = help->server;
+  helper_struct *help = (helper_struct *) arg;
+  //Connection *connection = help->connection;
+  //Server *server = help->server;
 
   Message login_message;
-  if (!connection->receive(login_message)) {
+  if (!help->connection->receive(login_message)) {
     std::cerr << "Failed to receive login message";
+    return nullptr;
   }
 
-  User *user = nullptr; 
+Message message_to_receive;
   if (login_message.tag == TAG_RLOGIN || login_message.tag == TAG_SLOGIN) {
-    user = new User(login_message.data);
+    std::string trimmedData = login_message.data.substr(0, login_message.data.length() - 1);
+    User *user = new User(trimmedData);
 
-    Message server_response(TAG_OK, "Successful login");
-    connection->send(server_response);
+    message_to_receive.tag = TAG_OK;
+    message_to_receive.data = "logged in as " + user->username;
+    help->connection->send(message_to_receive);
 
     if (login_message.tag == TAG_RLOGIN) {
-      receiver_helper(connection, user); // Implement
+      std::cout << user->username << std::endl;
+      receiver_helper(help, user); // Implement
     } else {
-      sender_helper(connection, user, server);
+      std::cout << "alice? bob?" << std::endl;
+      sender_helper(help, user);
     }
 
-
+  free(help);
+  return nullptr;
   }
 
   // TODO: read login message (should be tagged either with
@@ -167,8 +253,12 @@ void Server::handle_client_requests() {
     Connection *conn = new Connection(clientfd);
     helper_struct *data = new helper_struct{conn, this};
 
+    // helper_struct *data = new helper_struct();
+    // data->connection = new Connection(clientfd);
+    // data->server = this;
+
     pthread_t thr_id;
-    pthread_create(&thr_id, NULL, worker, data);
+    pthread_create(&thr_id, nullptr, worker, static_cast<void *>(data));
   }
 }
 
